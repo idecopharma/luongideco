@@ -1,0 +1,2917 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Salary Pro - Quản Lý Lương Chuyên Nghiệp</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --sidebar-width: 280px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* Login Screen */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .login-logo {
+            margin-bottom: 30px;
+        }
+        
+        .login-logo i {
+            font-size: 48px;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+        
+        .login-form input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        .login-form input:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .login-btn:hover {
+            background: #2980b9;
+        }
+        
+        .login-error {
+            color: var(--danger-color);
+            margin-top: 10px;
+            display: none;
+        }
+        
+        /* Main App */
+        .main-app {
+            display: none;
+        }
+        
+        /* Header */
+        .app-header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .header-logo i {
+            font-size: 24px;
+            color: var(--secondary-color);
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logout-btn {
+            padding: 8px 15px;
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        /* Tabs Navigation */
+        .tabs-container {
+            background: white;
+            margin: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tabs-header {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .tab-btn {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: var(--secondary-color);
+            border-bottom-color: var(--secondary-color);
+        }
+        
+        .tab-content {
+            padding: 30px;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        /* Form Styles */
+        .form-section {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .section-title {
+            font-size: 20px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            text-align: right;
+            font-family: monospace;
+        }
+        
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+        }
+        
+        .form-control.currency {
+            background-color: #f9f9f9;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: var(--secondary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #219653;
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #d68910;
+        }
+        
+        /* Employee List */
+        .employee-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .employee-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .employee-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .employee-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .employee-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .employee-body {
+            padding: 15px;
+        }
+        
+        .employee-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .employee-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .employee-actions {
+            padding: 15px;
+            background: #f8f9fa;
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Salary Calculation */
+        .calculation-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .calculation-row .form-group {
+            flex: 1;
+        }
+        
+        /* Result Display */
+        .result-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        
+        /* Salary Records Table */
+        .salary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .salary-table th,
+        .salary-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .salary-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .salary-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Alert */
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        /* Salary Criteria List */
+        .criteria-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .criteria-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .criteria-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        /* Working Days Info */
+        .days-info {
+            background: #e8f4fc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .days-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+        
+        /* Sync Status */
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .sync-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .sync-indicator.synced {
+            background: var(--success-color);
+        }
+        
+        .sync-indicator.syncing {
+            background: var(--warning-color);
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Smart Features */
+        .smart-comparison {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .comparison-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .comparison-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .comparison-row.difference {
+            font-weight: bold;
+            border-top: 2px solid #dee2e6;
+            margin-top: 10px;
+            padding-top: 15px;
+        }
+        
+        .tab3-amount {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .tab4-amount {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .balance-status {
+            padding: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+        
+        .balance-status.balanced {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .balance-status.unbalanced {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .kpi-limit-warning {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .auto-adjust-notice {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .smart-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            background: #e8f4fc;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #3498db;
+        }
+        
+        /* KPI Auto Adjust Info */
+        .kpi-auto-info {
+            background: #fff3cd;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .kpi-auto-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        /* Auto-sync indicator */
+        .auto-sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #e8f4fc;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        
+        /* Utility */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mb-20 { margin-bottom: 20px; }
+        .mt-20 { margin-top: 20px; }
+        .d-none { display: none; }
+        .d-flex { display: flex; }
+        .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; }
+        .w-100 { width: 100%; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .calculation-row {
+                flex-direction: column;
+            }
+            
+            .employee-list, .criteria-list {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs-header {
+                flex-wrap: wrap;
+            }
+            
+            .tab-btn {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            
+            .smart-comparison {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-logo">
+            <i class="fas fa-calculator"></i>
+            <h1>HR Salary Pro</h1>
+            <p>Quản lý lương chuyên nghiệp</p>
+        </div>
+        <div class="login-form">
+            <input type="password" id="passwordInput" placeholder="Nhập mật khẩu" autocomplete="off">
+            <button class="login-btn" id="loginBtn">Đăng nhập</button>
+            <div class="login-error" id="loginError">
+                <i class="fas fa-exclamation-circle"></i> Mật khẩu không đúng
+            </div>
+            <div class="mt-20">
+                <p><strong>Mật khẩu:</strong> Cấp quyền</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Application -->
+    <div id="mainApp" class="main-app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="header-logo">
+                    <i class="fas fa-calculator"></i>
+                    <h2>HR Salary Pro</h2>
+                </div>
+                <div class="sync-status" id="syncStatus">
+                    <div class="sync-indicator synced" id="syncIndicator"></div>
+                    <span id="syncText">Đã đồng bộ</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <div class="user-avatar">AD</div>
+                    <div>
+                        <div><strong>Kế toán</strong></div>
+                        <div style="font-size: 12px; color: #666;">Quản trị viên</div>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                </button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="tabs-container">
+            <!-- Tabs Header -->
+            <div class="tabs-header">
+                <button class="tab-btn active" data-tab="tab1">
+                    <i class="fas fa-user-plus"></i> Quản lý nhân viên
+                </button>
+                <button class="tab-btn" data-tab="tab2">
+                    <i class="fas fa-money-bill-wave"></i> Tiêu chí lương
+                </button>
+                <button class="tab-btn" data-tab="tab3">
+                    <i class="fas fa-calculator"></i> Tính lương nội bộ
+                </button>
+                <button class="tab-btn" data-tab="tab4">
+                    <i class="fas fa-file-contract"></i> Khai thuế & BH
+                </button>
+                <button class="tab-btn" data-tab="tab5">
+                    <i class="fas fa-history"></i> Danh sách bảng lương
+                </button>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Tab 1: Employee Management -->
+                <div id="tab1" class="tab-pane active">
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-user-plus"></i> Thêm nhân viên mới
+                        </h2>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Họ và tên *</label>
+                                <input type="text" id="empName" class="form-control" placeholder="Nguyễn Văn A">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Vị trí công việc</label>
+                                <input type="text" id="empPosition" class="form-control" placeholder="Nhân viên">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Ngày sinh *</label>
+                                <input type="date" id="empDob" class="form-control">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">CCCD/CMND *</label>
+                                <input type="text" id="empCccd" class="form-control" placeholder="012345678901">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Ngày vào làm</label>
+                                <input type="date" id="empJoinDate" class="form-control">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Ngân hàng</label>
+                                <input type="text" id="empBank" class="form-control" placeholder="Vietcombank">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Số tài khoản *</label>
+                                <input type="text" id="empAccount" class="form-control" placeholder="1234567890">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Chức vụ</label>
+                                <input type="text" id="empTitle" class="form-control" placeholder="Nhân viên">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Phòng ban</label>
+                                <input type="text" id="empDepartment" class="form-control" placeholder="Kế toán">
+                            </div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <button class="btn btn-primary" id="saveEmployeeBtn">
+                                <i class="fas fa-save"></i> Lưu nhân viên
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-users"></i> Danh sách nhân viên
+                        </h2>
+                        
+                        <div id="employeesLoading" class="text-center" style="padding: 40px;">
+                            <div class="spinner"></div>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                        
+                        <div class="employee-list" id="employeesList">
+                            <!-- Employee cards will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab 2: Salary Criteria -->
+                <div id="tab2" class="tab-pane">
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-money-bill-wave"></i> Thêm tiêu chí lương & phụ cấp
+                        </h2>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Lưu ý:</strong> Tiêu chí lương chỉ cần khai 1 lần và áp dụng cố định cho tất cả các tháng. 
+                                Khi tính lương ở Tab 3 và Tab 4, hệ thống sẽ tự động lấy thông tin từ tiêu chí này.
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Chọn nhân viên *</label>
+                                <select id="criteriaEmployee" class="form-control">
+                                    <option value="">-- Chọn nhân viên --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Lương cơ bản (VNĐ) *</label>
+                                <input type="text" id="criteriaBasicSalary" class="form-control currency" placeholder="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Phụ cấp chức vụ (VNĐ)</label>
+                                <input type="text" id="criteriaAllowance" class="form-control currency" placeholder="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">KPI chuẩn 100% (VNĐ)</label>
+                                <input type="text" id="criteriaKpiStandard" class="form-control currency" placeholder="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Lương tính bảo hiểm (VNĐ) *</label>
+                                <input type="text" id="criteriaInsuranceSalary" class="form-control currency" placeholder="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Phụ cấp cơm/ngày (VNĐ)</label>
+                                <input type="text" id="criteriaMealAllowance" class="form-control currency" placeholder="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Phụ cấp xăng xe/tháng (VNĐ)</label>
+                                <input type="text" id="criteriaTransportAllowance" class="form-control currency" placeholder="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Phụ cấp liên lạc/tháng (VNĐ)</label>
+                                <input type="text" id="criteriaCommunicationAllowance" class="form-control currency" placeholder="0">
+                            </div>
+                        </div>
+                        
+                        <div class="text-right">
+                            <button class="btn btn-primary" id="saveCriteriaBtn">
+                                <i class="fas fa-save"></i> Lưu tiêu chí
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-list"></i> Danh sách tiêu chí đã lưu
+                        </h2>
+                        
+                        <div id="criteriaLoading" class="text-center" style="padding: 40px;">
+                            <div class="spinner"></div>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                        
+                        <div class="criteria-list" id="criteriaList">
+                            <!-- Criteria cards will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab 3: Internal Salary Calculation -->
+                <div id="tab3" class="tab-pane">
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-user-check"></i> Chọn nhân viên và tháng
+                        </h2>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Chọn nhân viên *</label>
+                                <select id="internalEmployee" class="form-control">
+                                    <option value="">-- Chọn nhân viên --</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Tháng lương *</label>
+                                <input type="month" id="internalMonth" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div id="internalEmployeeInfo" class="d-none">
+                            <div class="employee-card">
+                                <div class="employee-header">
+                                    <div class="employee-avatar" id="internalAvatar">NV</div>
+                                    <div>
+                                        <div class="employee-name" id="internalName">Nguyễn Văn A</div>
+                                        <div class="employee-position" id="internalPosition">Nhân viên</div>
+                                    </div>
+                                </div>
+                                <div class="employee-body">
+                                    <div class="employee-detail">
+                                        <span>Tháng lương:</span>
+                                        <span id="internalMonthText">Tháng 1/2026</span>
+                                    </div>
+                                    <div class="employee-detail">
+                                        <span>Lương cơ bản:</span>
+                                        <span id="internalBasicSalaryText">0 VNĐ</span>
+                                    </div>
+                                    <div class="employee-detail">
+                                        <span>Phụ cấp chức vụ:</span>
+                                        <span id="internalAllowanceText">0 VNĐ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-calculator"></i> Nhập thông tin tính lương
+                        </h2>
+                        
+                        <div class="days-info">
+                            <div class="days-info-row">
+                                <span><strong>Thông tin ngày công tháng <span id="currentMonthText">Tháng 1/2026</span>:</strong></span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Tổng số ngày công trong tháng:</span>
+                                <span id="totalWorkingDays">26 ngày</span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Ngày công đã nhập:</span>
+                                <span id="enteredWorkDays">0 ngày</span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Tỷ lệ ngày công:</span>
+                                <span id="workDaysRatio">0/26 (0%)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Ngày công làm việc *</label>
+                                <input type="number" id="internalWorkDays" class="form-control" value="0" min="0" max="31">
+                                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                    Tối đa: <span id="maxWorkDays">26</span> ngày (không tính thứ 7, CN)
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Tỷ lệ KPI đạt được (%) *</label>
+                                <input type="number" id="internalKpiPercentage" class="form-control" value="0" min="0" max="100">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Điều chỉnh KPI (VNĐ)</label>
+                                <input type="text" id="internalKpiAdjustment" class="form-control currency" placeholder="0">
+                                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                    Dương: thưởng thêm, Âm: trừ
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Các khoản trừ khác (VNĐ)</label>
+                                <input type="text" id="internalOtherDeductions" class="form-control currency" placeholder="0">
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-20">
+                            <button class="btn btn-primary" id="calculateInternalBtn">
+                                <i class="fas fa-calculator"></i> Tính lương nội bộ
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-file-invoice-dollar"></i> Kết quả tính lương nội bộ
+                        </h2>
+                        
+                        <div class="result-box">
+                            <h3 style="margin-bottom: 20px;">Chi tiết tính toán</h3>
+                            <div class="result-row">
+                                <span>Tổng thu nhập trước trừ:</span>
+                                <span id="internalTotalBefore">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Tỷ lệ ngày công:</span>
+                                <span id="internalDaysRatio">0/26 (0%)</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Thu nhập theo ngày công:</span>
+                                <span id="internalByDays">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Trừ BH người lao động (10.5%):</span>
+                                <span id="internalBhDeduction">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Các khoản trừ khác:</span>
+                                <span id="internalOtherDeduct">0 VNĐ</span>
+                            </div>
+                            <div class="result-row" style="font-size: 18px; font-weight: bold; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
+                                <span>Tổng thu nhập nội bộ:</span>
+                                <span id="internalFinalSalary">0 VNĐ</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right mt-20">
+                            <button class="btn btn-success" id="saveInternalSalaryBtn">
+                                <i class="fas fa-save"></i> Lưu lương nội bộ
+                            </button>
+                            <button class="btn btn-warning" id="editInternalBtn" style="display: none;">
+                                <i class="fas fa-edit"></i> Sửa
+                            </button>
+                            <button class="btn btn-danger" id="deleteInternalBtn" style="display: none;">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab 4: Tax & Insurance -->
+                <div id="tab4" class="tab-pane">
+                    <!-- Auto-sync Indicator -->
+                    <div class="auto-sync-indicator" id="autoSyncIndicator" style="display: none;">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Tự động đồng bộ thông tin từ Tab 3...</span>
+                    </div>
+                    
+                    <!-- Smart Comparison Section -->
+                    <div class="form-section" id="smartComparisonSection" style="display: none;">
+                        <h2 class="section-title">
+                            <i class="fas fa-balance-scale"></i> Tự động đồng bộ từ Tab 3
+                        </h2>
+                        
+                        <div class="smart-comparison">
+                            <div class="comparison-title">
+                                <i class="fas fa-exchange-alt"></i> Thông tin tự động đồng bộ
+                            </div>
+                            
+                            <div class="comparison-row">
+                                <span>Nhân viên:</span>
+                                <span id="autoSyncEmployee">Nguyễn Văn A</span>
+                            </div>
+                            
+                            <div class="comparison-row">
+                                <span>Tháng lương:</span>
+                                <span id="autoSyncMonth">Tháng 1/2026</span>
+                            </div>
+                            
+                            <div class="comparison-row">
+                                <span>Ngày công:</span>
+                                <span id="autoSyncWorkDays">10 ngày</span>
+                            </div>
+                            
+                            <div class="comparison-row difference">
+                                <span>Lương nội bộ đã tính:</span>
+                                <span class="tab3-amount" id="autoSyncInternalSalary">0 VNĐ</span>
+                            </div>
+                            
+                            <div class="balance-status balanced">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Hệ thống sẽ tự động tính lương hợp đồng dựa trên thông tin trên</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-file-contract"></i> Kết quả tính lương hợp đồng
+                        </h2>
+                        
+                        <div class="alert alert-success" id="autoCalculateNotice" style="display: none;">
+                            <i class="fas fa-robot"></i>
+                            <div>
+                                <strong>Tự động tính toán:</strong> Hệ thống đã tự động tính lương hợp đồng dựa trên thông tin từ Tab 3.
+                            </div>
+                        </div>
+                        
+                        <div class="result-box">
+                            <h3 style="margin-bottom: 20px;">Chi tiết tính toán tự động</h3>
+                            <div class="result-row">
+                                <span>Lương tính bảo hiểm:</span>
+                                <span id="taxInsuranceSalary">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Phụ cấp cơm trưa:</span>
+                                <span id="taxMealAllowance">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Phụ cấp xăng xe:</span>
+                                <span id="taxTransportAllowance">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Phụ cấp liên lạc:</span>
+                                <span id="taxCommunicationAllowance">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Thu nhập KPI:</span>
+                                <span id="taxKpiActual">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Trừ BH người lao động (10.5%):</span>
+                                <span id="taxBhDeduction">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Điều chỉnh KPI:</span>
+                                <span id="taxKpiAdjust">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Giảm trừ khác:</span>
+                                <span id="taxOtherDeduct">0 VNĐ</span>
+                            </div>
+                            <div class="result-row" style="font-size: 18px; font-weight: bold; border-top: 2px solid rgba(255,255,255,0.3); padding-top: 15px;">
+                                <span>Tổng lương hợp đồng:</span>
+                                <span id="taxFinalSalary">0 VNĐ</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right mt-20">
+                            <button class="btn btn-success" id="saveTaxSalaryBtn">
+                                <i class="fas fa-save"></i> Lưu lương hợp đồng
+                            </button>
+                            <button class="btn btn-warning" id="editTaxBtn" style="display: none;">
+                                <i class="fas fa-edit"></i> Sửa
+                            </button>
+                            <button class="btn btn-danger" id="deleteTaxBtn" style="display: none;">
+                                <i class="fas fa-trash"></i> Xóa
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab 5: Salary Records -->
+                <div id="tab5" class="tab-pane">
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-history"></i> Danh sách bảng lương đã lập
+                        </h2>
+                        
+                        <div class="form-grid mb-20">
+                            <div class="form-group">
+                                <label class="form-label">Lọc theo tháng</label>
+                                <input type="month" id="filterMonth" class="form-control">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Lọc theo nhân viên</label>
+                                <select id="filterEmployee" class="form-control">
+                                    <option value="">Tất cả nhân viên</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" id="filterBtn">
+                                    <i class="fas fa-filter"></i> Lọc
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="salaryLoading" class="text-center" style="padding: 40px;">
+                            <div class="spinner"></div>
+                            <p>Đang tải dữ liệu...</p>
+                        </div>
+                        
+                        <table class="salary-table" id="salaryRecordsTable" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Nhân viên</th>
+                                    <th>Tháng lương</th>
+                                    <th>Ngày công</th>
+                                    <th>Lương nội bộ</th>
+                                    <th>Lương hợp đồng</th>
+                                    <th>Ngày lập</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="salaryRecordsBody">
+                                <!-- Salary records will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Employee Modal -->
+        <div id="editEmployeeModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Chỉnh sửa nhân viên</h3>
+                    <button class="modal-close" onclick="closeEmployeeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Họ và tên</label>
+                        <input type="text" id="editEmpName" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Ngày sinh</label>
+                        <input type="date" id="editEmpDob" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">CCCD/CMND</label>
+                        <input type="text" id="editEmpCccd" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Tài khoản NH</label>
+                        <input type="text" id="editEmpAccount" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Ngân hàng</label>
+                        <input type="text" id="editEmpBank" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Vị trí</label>
+                        <input type="text" id="editEmpPosition" class="form-control">
+                    </div>
+                    
+                    <div class="d-flex justify-between mt-20">
+                        <button class="btn btn-danger" onclick="deleteEmployeePermanently()">
+                            <i class="fas fa-trash-alt"></i> Xóa vĩnh viễn
+                        </button>
+                        <button class="btn btn-success" onclick="updateEmployee()">
+                            <i class="fas fa-save"></i> Cập nhật
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Criteria Modal -->
+        <div id="editCriteriaModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Chỉnh sửa tiêu chí lương</h3>
+                    <button class="modal-close" onclick="closeCriteriaModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editCriteriaId">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Lương cơ bản (VNĐ)</label>
+                        <input type="text" id="editCriteriaBasicSalary" class="form-control currency" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Phụ cấp chức vụ (VNĐ)</label>
+                        <input type="text" id="editCriteriaAllowance" class="form-control currency" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">KPI chuẩn 100% (VNĐ)</label>
+                        <input type="text" id="editCriteriaKpiStandard" class="form-control currency" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Lương tính bảo hiểm (VNĐ)</label>
+                        <input type="text" id="editCriteriaInsuranceSalary" class="form-control currency" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Phụ cấp cơm/ngày (VNĐ)</label>
+                        <input type="text" id="editCriteriaMealAllowance" class="form-control currency" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Phụ cấp xăng xe/tháng (VNĐ)</label>
+                        <input type="text" id="editCriteriaTransportAllowance" class="form-control currency" placeholder="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Phụ cấp liên lạc/tháng (VNĐ)</label>
+                        <input type="text" id="editCriteriaCommunicationAllowance" class="form-control currency" placeholder="0">
+                    </div>
+                    
+                    <div class="d-flex justify-between mt-20">
+                        <button class="btn btn-danger" onclick="deleteCriteria()">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>
+                        <button class="btn btn-success" onclick="updateCriteria()">
+                            <i class="fas fa-save"></i> Cập nhật
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXAczKrk_dvz99pvhJlVw3qVllnejRCPc",
+            authDomain: "luong-a7cc4.firebaseapp.com",
+            projectId: "luong-a7cc4",
+            storageBucket: "luong-a7cc4.firebasestorage.app",
+            messagingSenderId: "540704921176",
+            appId: "1:540704921176:web:2b926908b7cc52e241dc2d",
+            measurementId: "G-L1K0SH23NP"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Application state
+        const appState = {
+            employees: [],
+            salaryCriteria: [],
+            salaryRecords: [],
+            currentEmployeeId: null,
+            currentCriteriaId: null,
+            currentSalaryData: null,
+            currentMonthWorkingDays: 26,
+            lastInternalSalary: 0,
+            autoSyncData: null // Dữ liệu tự động đồng bộ từ Tab 3
+        };
+        
+        // Password for app access
+        const APP_PASSWORD = "ketoan@@2026";
+    </script>
+    
+    <script>
+        // DOM Elements
+        const loginScreen = document.getElementById('loginScreen');
+        const mainApp = document.getElementById('mainApp');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        // Employee management
+        const saveEmployeeBtn = document.getElementById('saveEmployeeBtn');
+        const employeesList = document.getElementById('employeesList');
+        const employeesLoading = document.getElementById('employeesLoading');
+        
+        // Employee form fields
+        const empName = document.getElementById('empName');
+        const empPosition = document.getElementById('empPosition');
+        const empDob = document.getElementById('empDob');
+        const empCccd = document.getElementById('empCccd');
+        const empJoinDate = document.getElementById('empJoinDate');
+        const empBank = document.getElementById('empBank');
+        const empAccount = document.getElementById('empAccount');
+        const empTitle = document.getElementById('empTitle');
+        const empDepartment = document.getElementById('empDepartment');
+        
+        // Salary Criteria (đã bỏ tháng áp dụng)
+        const criteriaEmployee = document.getElementById('criteriaEmployee');
+        const criteriaBasicSalary = document.getElementById('criteriaBasicSalary');
+        const criteriaAllowance = document.getElementById('criteriaAllowance');
+        const criteriaKpiStandard = document.getElementById('criteriaKpiStandard');
+        const criteriaInsuranceSalary = document.getElementById('criteriaInsuranceSalary');
+        const criteriaMealAllowance = document.getElementById('criteriaMealAllowance');
+        const criteriaTransportAllowance = document.getElementById('criteriaTransportAllowance');
+        const criteriaCommunicationAllowance = document.getElementById('criteriaCommunicationAllowance');
+        const saveCriteriaBtn = document.getElementById('saveCriteriaBtn');
+        const criteriaList = document.getElementById('criteriaList');
+        const criteriaLoading = document.getElementById('criteriaLoading');
+        
+        // Internal Salary Calculation
+        const internalEmployee = document.getElementById('internalEmployee');
+        const internalMonth = document.getElementById('internalMonth');
+        const internalEmployeeInfo = document.getElementById('internalEmployeeInfo');
+        const internalAvatar = document.getElementById('internalAvatar');
+        const internalName = document.getElementById('internalName');
+        const internalPosition = document.getElementById('internalPosition');
+        const internalMonthText = document.getElementById('internalMonthText');
+        const internalBasicSalaryText = document.getElementById('internalBasicSalaryText');
+        const internalAllowanceText = document.getElementById('internalAllowanceText');
+        
+        const currentMonthText = document.getElementById('currentMonthText');
+        const totalWorkingDays = document.getElementById('totalWorkingDays');
+        const enteredWorkDays = document.getElementById('enteredWorkDays');
+        const workDaysRatio = document.getElementById('workDaysRatio');
+        const maxWorkDays = document.getElementById('maxWorkDays');
+        
+        const internalWorkDays = document.getElementById('internalWorkDays');
+        const internalKpiPercentage = document.getElementById('internalKpiPercentage');
+        const internalKpiAdjustment = document.getElementById('internalKpiAdjustment');
+        const internalOtherDeductions = document.getElementById('internalOtherDeductions');
+        const calculateInternalBtn = document.getElementById('calculateInternalBtn');
+        
+        const internalTotalBefore = document.getElementById('internalTotalBefore');
+        const internalDaysRatio = document.getElementById('internalDaysRatio');
+        const internalByDays = document.getElementById('internalByDays');
+        const internalBhDeduction = document.getElementById('internalBhDeduction');
+        const internalOtherDeduct = document.getElementById('internalOtherDeduct');
+        const internalFinalSalary = document.getElementById('internalFinalSalary');
+        
+        const saveInternalSalaryBtn = document.getElementById('saveInternalSalaryBtn');
+        const editInternalBtn = document.getElementById('editInternalBtn');
+        const deleteInternalBtn = document.getElementById('deleteInternalBtn');
+        
+        // Tax Salary Calculation - TỰ ĐỘNG ĐỒNG BỘ
+        const autoSyncIndicator = document.getElementById('autoSyncIndicator');
+        const smartComparisonSection = document.getElementById('smartComparisonSection');
+        const autoSyncEmployee = document.getElementById('autoSyncEmployee');
+        const autoSyncMonth = document.getElementById('autoSyncMonth');
+        const autoSyncWorkDays = document.getElementById('autoSyncWorkDays');
+        const autoSyncInternalSalary = document.getElementById('autoSyncInternalSalary');
+        const autoCalculateNotice = document.getElementById('autoCalculateNotice');
+        
+        const taxInsuranceSalary = document.getElementById('taxInsuranceSalary');
+        const taxMealAllowance = document.getElementById('taxMealAllowance');
+        const taxTransportAllowance = document.getElementById('taxTransportAllowance');
+        const taxCommunicationAllowance = document.getElementById('taxCommunicationAllowance');
+        const taxKpiActual = document.getElementById('taxKpiActual');
+        const taxBhDeduction = document.getElementById('taxBhDeduction');
+        const taxKpiAdjust = document.getElementById('taxKpiAdjust');
+        const taxOtherDeduct = document.getElementById('taxOtherDeduct');
+        const taxFinalSalary = document.getElementById('taxFinalSalary');
+        
+        const saveTaxSalaryBtn = document.getElementById('saveTaxSalaryBtn');
+        const editTaxBtn = document.getElementById('editTaxBtn');
+        const deleteTaxBtn = document.getElementById('deleteTaxBtn');
+        
+        // Salary records
+        const salaryLoading = document.getElementById('salaryLoading');
+        const salaryRecordsTable = document.getElementById('salaryRecordsTable');
+        const salaryRecordsBody = document.getElementById('salaryRecordsBody');
+        const filterMonth = document.getElementById('filterMonth');
+        const filterEmployee = document.getElementById('filterEmployee');
+        const filterBtn = document.getElementById('filterBtn');
+        
+        // Sync status
+        const syncStatus = document.getElementById('syncStatus');
+        const syncIndicator = document.getElementById('syncIndicator');
+        const syncText = document.getElementById('syncText');
+        
+        // Modal elements
+        const editEmployeeModal = document.getElementById('editEmployeeModal');
+        const editEmpName = document.getElementById('editEmpName');
+        const editEmpDob = document.getElementById('editEmpDob');
+        const editEmpCccd = document.getElementById('editEmpCccd');
+        const editEmpAccount = document.getElementById('editEmpAccount');
+        const editEmpBank = document.getElementById('editEmpBank');
+        const editEmpPosition = document.getElementById('editEmpPosition');
+        
+        const editCriteriaModal = document.getElementById('editCriteriaModal');
+        const editCriteriaId = document.getElementById('editCriteriaId');
+        const editCriteriaBasicSalary = document.getElementById('editCriteriaBasicSalary');
+        const editCriteriaAllowance = document.getElementById('editCriteriaAllowance');
+        const editCriteriaKpiStandard = document.getElementById('editCriteriaKpiStandard');
+        const editCriteriaInsuranceSalary = document.getElementById('editCriteriaInsuranceSalary');
+        const editCriteriaMealAllowance = document.getElementById('editCriteriaMealAllowance');
+        const editCriteriaTransportAllowance = document.getElementById('editCriteriaTransportAllowance');
+        const editCriteriaCommunicationAllowance = document.getElementById('editCriteriaCommunicationAllowance');
+        
+        // Utility functions for currency formatting
+        function formatNumberToCurrency(number) {
+            if (typeof number === 'string') {
+                // Remove all non-digit characters
+                number = number.replace(/[^\d]/g, '');
+                number = parseInt(number || 0);
+            }
+            return new Intl.NumberFormat('en-US').format(number);
+        }
+        
+        function parseCurrencyToNumber(currencyString) {
+            if (!currencyString) return 0;
+            // Remove all non-digit characters
+            const number = parseInt(currencyString.replace(/[^\d]/g, '') || 0);
+            return number;
+        }
+        
+        // Initialize app
+        function initApp() {
+            const isLoggedIn = localStorage.getItem('hr_salary_pro_logged_in') === 'true';
+            
+            if (isLoggedIn) {
+                showMainApp();
+                initFirebase();
+            } else {
+                showLoginScreen();
+            }
+            
+            setupEventListeners();
+            setCurrentDate();
+            setupCurrencyInputs();
+        }
+        
+        function setupCurrencyInputs() {
+            // Setup currency formatting for all currency inputs
+            const currencyInputs = document.querySelectorAll('.currency');
+            currencyInputs.forEach(input => {
+                // Format on blur
+                input.addEventListener('blur', function() {
+                    const value = parseCurrencyToNumber(this.value);
+                    this.value = formatNumberToCurrency(value);
+                });
+                
+                // Remove formatting on focus for easy editing
+                input.addEventListener('focus', function() {
+                    const value = parseCurrencyToNumber(this.value);
+                    this.value = value || '';
+                });
+                
+                // Format initial value
+                const initialValue = parseCurrencyToNumber(input.value);
+                input.value = formatNumberToCurrency(initialValue);
+            });
+        }
+        
+        function showLoginScreen() {
+            loginScreen.style.display = 'block';
+            mainApp.style.display = 'none';
+        }
+        
+        function showMainApp() {
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'block';
+        }
+        
+        function setCurrentDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            
+            empDob.value = '1990-01-01';
+            empJoinDate.value = today.toISOString().split('T')[0];
+            internalMonth.value = `${year}-${month}`;
+            filterMonth.value = `${year}-${month}`;
+        }
+        
+        function setupEventListeners() {
+            // Login
+            loginBtn.addEventListener('click', handleLogin);
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+            
+            // Logout
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            // Tab navigation
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // Load data for tab
+                    if (tabId === 'tab2') {
+                        loadSalaryCriteria();
+                    } else if (tabId === 'tab5') {
+                        loadSalaryRecords();
+                    } else if (tabId === 'tab4') {
+                        // Khi chuyển sang Tab 4, tự động đồng bộ từ Tab 3
+                        autoSyncFromTab3();
+                    }
+                });
+            });
+            
+            // Save employee
+            saveEmployeeBtn.addEventListener('click', saveEmployee);
+            
+            // Save criteria
+            saveCriteriaBtn.addEventListener('click', saveSalaryCriteria);
+            
+            // Employee selection for criteria
+            criteriaEmployee.addEventListener('change', loadEmployeeCriteria);
+            
+            // Internal salary calculation
+            internalEmployee.addEventListener('change', loadInternalData);
+            internalMonth.addEventListener('change', updateInternalWorkingDays);
+            internalWorkDays.addEventListener('input', updateInternalDisplay);
+            calculateInternalBtn.addEventListener('click', calculateInternalSalary);
+            saveInternalSalaryBtn.addEventListener('click', saveInternalSalary);
+            
+            // Auto-calculate for Tab 3
+            [internalKpiPercentage, internalKpiAdjustment, internalOtherDeductions].forEach(input => {
+                input.addEventListener('input', calculateInternalSalary);
+            });
+            
+            // Filter records
+            filterBtn.addEventListener('click', loadSalaryRecords);
+            
+            // Save tax salary
+            saveTaxSalaryBtn.addEventListener('click', saveTaxSalary);
+        }
+        
+        // TỰ ĐỘNG ĐỒNG BỘ TỪ TAB 3
+        function autoSyncFromTab3() {
+            // Kiểm tra xem Tab 3 đã có dữ liệu chưa
+            if (appState.currentSalaryData && appState.currentSalaryData.internal) {
+                autoSyncIndicator.style.display = 'flex';
+                
+                // Lưu dữ liệu tự động đồng bộ
+                appState.autoSyncData = {
+                    employeeId: appState.currentSalaryData.employeeId,
+                    month: appState.currentSalaryData.month,
+                    workDays: appState.currentSalaryData.workDays,
+                    internalSalary: appState.currentSalaryData.internal.finalSalary,
+                    internalData: appState.currentSalaryData.internal
+                };
+                
+                // Hiển thị thông tin đồng bộ
+                const employee = appState.employees.find(emp => emp.id === appState.currentSalaryData.employeeId);
+                if (employee) {
+                    autoSyncEmployee.textContent = employee.name;
+                }
+                
+                const monthFormatted = appState.currentSalaryData.month ? 
+                    `Tháng ${new Date(appState.currentSalaryData.month + '-01').getMonth() + 1}/${new Date(appState.currentSalaryData.month + '-01').getFullYear()}` : 'N/A';
+                autoSyncMonth.textContent = monthFormatted;
+                autoSyncWorkDays.textContent = `${appState.currentSalaryData.workDays} ngày`;
+                autoSyncInternalSalary.textContent = formatCurrency(appState.currentSalaryData.internal.finalSalary);
+                
+                smartComparisonSection.style.display = 'block';
+                autoCalculateNotice.style.display = 'flex';
+                
+                // Tự động tính lương hợp đồng
+                setTimeout(() => {
+                    autoCalculateTaxSalary();
+                    autoSyncIndicator.style.display = 'none';
+                }, 1000);
+            } else {
+                // Nếu Tab 3 chưa có dữ liệu
+                smartComparisonSection.style.display = 'none';
+                autoSyncIndicator.style.display = 'none';
+                autoCalculateNotice.style.display = 'none';
+            }
+        }
+        
+        function handleLogin() {
+            if (passwordInput.value === APP_PASSWORD) {
+                localStorage.setItem('hr_salary_pro_logged_in', 'true');
+                showMainApp();
+                initFirebase();
+                passwordInput.value = '';
+                loginError.style.display = 'none';
+            } else {
+                loginError.style.display = 'block';
+            }
+        }
+        
+        function handleLogout() {
+            localStorage.removeItem('hr_salary_pro_logged_in');
+            showLoginScreen();
+        }
+        
+        function initFirebase() {
+            updateSyncStatus('syncing', 'Đang kết nối...');
+            loadEmployees();
+            loadSalaryCriteria();
+            loadSalaryRecords();
+            setupRealtimeListeners();
+        }
+        
+        function updateSyncStatus(status, text) {
+            syncIndicator.className = 'sync-indicator ' + status;
+            syncText.textContent = text;
+        }
+        
+        function setupRealtimeListeners() {
+            // Employees listener
+            db.collection('employees').onSnapshot(snapshot => {
+                updateSyncStatus('syncing', 'Đang cập nhật...');
+                
+                appState.employees = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.active !== false) {
+                        appState.employees.push({
+                            id: doc.id,
+                            ...data
+                        });
+                    }
+                });
+                
+                updateAllEmployeeDropdowns();
+                renderEmployees();
+                
+                setTimeout(() => {
+                    updateSyncStatus('synced', 'Đã đồng bộ');
+                }, 500);
+            });
+            
+            // Salary criteria listener
+            db.collection('salary_criteria').onSnapshot(snapshot => {
+                appState.salaryCriteria = [];
+                snapshot.forEach(doc => {
+                    appState.salaryCriteria.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (document.getElementById('tab2').classList.contains('active')) {
+                    renderSalaryCriteria();
+                }
+            });
+            
+            // Salary records listener
+            db.collection('salary_records').onSnapshot(snapshot => {
+                appState.salaryRecords = [];
+                snapshot.forEach(doc => {
+                    appState.salaryRecords.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                if (document.getElementById('tab5').classList.contains('active')) {
+                    renderSalaryRecords();
+                }
+            });
+        }
+        
+        function loadEmployees() {
+            employeesLoading.style.display = 'block';
+            employeesList.innerHTML = '';
+            
+            db.collection('employees').where('active', '!=', false).get()
+                .then(snapshot => {
+                    appState.employees = [];
+                    snapshot.forEach(doc => {
+                        appState.employees.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    updateAllEmployeeDropdowns();
+                    renderEmployees();
+                    employeesLoading.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error loading employees:', error);
+                    employeesLoading.innerHTML = '<p style="color: red;">Lỗi tải dữ liệu</p>';
+                });
+        }
+        
+        function updateAllEmployeeDropdowns() {
+            const dropdowns = [
+                criteriaEmployee,
+                internalEmployee,
+                filterEmployee
+            ];
+            
+            dropdowns.forEach(dropdown => {
+                const currentValue = dropdown.value;
+                dropdown.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
+                
+                if (dropdown === filterEmployee) {
+                    dropdown.innerHTML = '<option value="">Tất cả nhân viên</option>';
+                }
+                
+                appState.employees.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.id;
+                    option.textContent = `${employee.name} - ${employee.position || 'Nhân viên'}`;
+                    dropdown.appendChild(option);
+                });
+                
+                dropdown.value = currentValue;
+            });
+        }
+        
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+        
+        function renderEmployees() {
+            employeesList.innerHTML = '';
+            
+            if (appState.employees.length === 0) {
+                employeesList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                        <i class="fas fa-users" style="font-size: 48px; color: #ddd;"></i>
+                        <p>Chưa có nhân viên nào</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            appState.employees.forEach(employee => {
+                const card = document.createElement('div');
+                card.className = 'employee-card';
+                
+                const initials = getInitials(employee.name);
+                const dobFormatted = employee.dob ? new Date(employee.dob).toLocaleDateString('vi-VN') : 'N/A';
+                
+                card.innerHTML = `
+                    <div class="employee-header">
+                        <div class="employee-avatar">${initials}</div>
+                        <div>
+                            <div style="font-weight: bold;">${employee.name}</div>
+                            <div style="font-size: 12px;">${employee.position || 'Nhân viên'}</div>
+                        </div>
+                    </div>
+                    <div class="employee-body">
+                        <div class="employee-detail">
+                            <span>Ngày sinh:</span>
+                            <span>${dobFormatted}</span>
+                        </div>
+                        <div class="employee-detail">
+                            <span>CCCD:</span>
+                            <span>${employee.cccd || 'N/A'}</span>
+                        </div>
+                        <div class="employee-detail">
+                            <span>Tài khoản:</span>
+                            <span>${employee.account || 'N/A'}</span>
+                        </div>
+                        <div class="employee-detail">
+                            <span>Ngân hàng:</span>
+                            <span>${employee.bank || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div class="employee-actions">
+                        <button class="btn btn-primary" onclick="openEditEmployeeModal('${employee.id}')">
+                            <i class="fas fa-edit"></i> Sửa
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteEmployee('${employee.id}')">
+                            <i class="fas fa-trash"></i> Xóa
+                        </button>
+                    </div>
+                `;
+                
+                employeesList.appendChild(card);
+            });
+        }
+        
+        function saveEmployee() {
+            if (!empName.value || !empCccd.value || !empAccount.value) {
+                alert('Vui lòng nhập đầy đủ thông tin bắt buộc: Họ tên, CCCD, Số tài khoản');
+                return;
+            }
+            
+            const employeeData = {
+                name: empName.value.trim(),
+                position: empPosition.value.trim() || 'Nhân viên',
+                dob: empDob.value,
+                cccd: empCccd.value.trim(),
+                joinDate: empJoinDate.value,
+                bank: empBank.value.trim(),
+                account: empAccount.value.trim(),
+                title: empTitle.value.trim(),
+                department: empDepartment.value.trim(),
+                active: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            const employeeId = 'emp_' + Date.now();
+            
+            db.collection('employees').doc(employeeId).set(employeeData)
+                .then(() => {
+                    alert('Đã lưu nhân viên thành công!');
+                    
+                    // Clear form
+                    empName.value = '';
+                    empPosition.value = '';
+                    empDob.value = '1990-01-01';
+                    empCccd.value = '';
+                    empJoinDate.value = new Date().toISOString().split('T')[0];
+                    empBank.value = '';
+                    empAccount.value = '';
+                    empTitle.value = '';
+                    empDepartment.value = '';
+                    
+                    document.querySelector('.employee-list').scrollIntoView({ behavior: 'smooth' });
+                })
+                .catch(error => {
+                    console.error('Error saving employee:', error);
+                    alert('Có lỗi xảy ra khi lưu nhân viên');
+                });
+        }
+        
+        function openEditEmployeeModal(employeeId) {
+            const employee = appState.employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            appState.currentEmployeeId = employeeId;
+            
+            editEmpName.value = employee.name;
+            editEmpDob.value = employee.dob ? employee.dob.split('T')[0] : '1990-01-01';
+            editEmpCccd.value = employee.cccd || '';
+            editEmpAccount.value = employee.account || '';
+            editEmpBank.value = employee.bank || '';
+            editEmpPosition.value = employee.position || '';
+            
+            editEmployeeModal.style.display = 'flex';
+        }
+        
+        function closeEmployeeModal() {
+            editEmployeeModal.style.display = 'none';
+            appState.currentEmployeeId = null;
+        }
+        
+        function updateEmployee() {
+            if (!appState.currentEmployeeId) return;
+            
+            const updatedData = {
+                name: editEmpName.value.trim(),
+                dob: editEmpDob.value,
+                cccd: editEmpCccd.value.trim(),
+                account: editEmpAccount.value.trim(),
+                bank: editEmpBank.value.trim(),
+                position: editEmpPosition.value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            db.collection('employees').doc(appState.currentEmployeeId).update(updatedData)
+                .then(() => {
+                    alert('Đã cập nhật thông tin nhân viên!');
+                    closeEmployeeModal();
+                })
+                .catch(error => {
+                    console.error('Error updating employee:', error);
+                    alert('Có lỗi xảy ra khi cập nhật');
+                });
+        }
+        
+        function deleteEmployee(employeeId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa nhân viên này? Toàn bộ dữ liệu lương và tiêu chí của nhân viên cũng sẽ bị xóa.')) {
+                return;
+            }
+            
+            db.collection('employees').doc(employeeId).delete()
+                .then(() => {
+                    db.collection('salary_criteria').where('employeeId', '==', employeeId).get()
+                        .then(snapshot => {
+                            const batch = db.batch();
+                            snapshot.forEach(doc => {
+                                batch.delete(doc.ref);
+                            });
+                            return batch.commit();
+                        })
+                        .then(() => {
+                            return db.collection('salary_records').where('employeeId', '==', employeeId).get();
+                        })
+                        .then(snapshot => {
+                            const batch = db.batch();
+                            snapshot.forEach(doc => {
+                                batch.delete(doc.ref);
+                            });
+                            return batch.commit();
+                        })
+                        .then(() => {
+                            alert('Đã xóa nhân viên và tất cả dữ liệu liên quan thành công!');
+                        })
+                        .catch(error => {
+                            console.error('Error deleting related data:', error);
+                            alert('Đã xóa nhân viên nhưng có lỗi khi xóa dữ liệu liên quan');
+                        });
+                })
+                .catch(error => {
+                    console.error('Error deleting employee:', error);
+                    alert('Có lỗi xảy ra khi xóa nhân viên');
+                });
+        }
+        
+        function deleteEmployeePermanently() {
+            if (!appState.currentEmployeeId) return;
+            deleteEmployee(appState.currentEmployeeId);
+            closeEmployeeModal();
+        }
+        
+        function loadSalaryCriteria() {
+            criteriaLoading.style.display = 'block';
+            criteriaList.innerHTML = '';
+            
+            db.collection('salary_criteria').orderBy('updatedAt', 'desc').get()
+                .then(snapshot => {
+                    const criteria = [];
+                    snapshot.forEach(doc => {
+                        criteria.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    renderSalaryCriteria(criteria);
+                    criteriaLoading.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error loading salary criteria:', error);
+                    criteriaLoading.innerHTML = '<p style="color: red;">Lỗi tải dữ liệu</p>';
+                });
+        }
+        
+        function renderSalaryCriteria(criteria = appState.salaryCriteria) {
+            criteriaList.innerHTML = '';
+            
+            if (criteria.length === 0) {
+                criteriaList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                        <i class="fas fa-list" style="font-size: 48px; color: #ddd;"></i>
+                        <p>Chưa có tiêu chí lương nào</p>
+                        <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                            Vui lòng thêm tiêu chí lương cho nhân viên ở bên trên
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+            
+            criteria.forEach(criterion => {
+                const employee = appState.employees.find(emp => emp.id === criterion.employeeId);
+                if (!employee) return;
+                
+                const card = document.createElement('div');
+                card.className = 'criteria-card';
+                
+                card.innerHTML = `
+                    <div class="criteria-header">
+                        <div>
+                            <div style="font-weight: bold;">${employee.name}</div>
+                            <div style="font-size: 12px; color: #666;">Áp dụng cho tất cả các tháng</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-warning btn-sm" onclick="openEditCriteriaModal('${criterion.id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteCriterion('${criterion.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Lương cơ bản:</span>
+                            <span style="font-weight: bold;">${criterion.basicSalary ? formatCurrency(criterion.basicSalary) : 'Chưa có số liệu'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Phụ cấp chức vụ:</span>
+                            <span>${criterion.allowance ? formatCurrency(criterion.allowance) : 'Chưa có số liệu'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>KPI chuẩn:</span>
+                            <span>${criterion.kpiStandard ? formatCurrency(criterion.kpiStandard) : 'Chưa có số liệu'}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Lương tính BH:</span>
+                            <span>${criterion.insuranceSalary ? formatCurrency(criterion.insuranceSalary) : 'Chưa có số liệu'}</span>
+                        </div>
+                    </div>
+                `;
+                
+                criteriaList.appendChild(card);
+            });
+        }
+        
+        function loadEmployeeCriteria() {
+            const employeeId = criteriaEmployee.value;
+            
+            if (!employeeId) return;
+            
+            db.collection('salary_criteria')
+                .where('employeeId', '==', employeeId)
+                .get()
+                .then(snapshot => {
+                    if (!snapshot.empty) {
+                        const criterion = snapshot.docs[0].data();
+                        criteriaBasicSalary.value = formatNumberToCurrency(criterion.basicSalary || 0);
+                        criteriaAllowance.value = formatNumberToCurrency(criterion.allowance || 0);
+                        criteriaKpiStandard.value = formatNumberToCurrency(criterion.kpiStandard || 0);
+                        criteriaInsuranceSalary.value = formatNumberToCurrency(criterion.insuranceSalary || 0);
+                        criteriaMealAllowance.value = formatNumberToCurrency(criterion.mealAllowance || 0);
+                        criteriaTransportAllowance.value = formatNumberToCurrency(criterion.transportAllowance || 0);
+                        criteriaCommunicationAllowance.value = formatNumberToCurrency(criterion.communicationAllowance || 0);
+                        
+                        appState.currentCriteriaId = snapshot.docs[0].id;
+                    } else {
+                        criteriaBasicSalary.value = formatNumberToCurrency(0);
+                        criteriaAllowance.value = formatNumberToCurrency(0);
+                        criteriaKpiStandard.value = formatNumberToCurrency(0);
+                        criteriaInsuranceSalary.value = formatNumberToCurrency(0);
+                        criteriaMealAllowance.value = formatNumberToCurrency(0);
+                        criteriaTransportAllowance.value = formatNumberToCurrency(0);
+                        criteriaCommunicationAllowance.value = formatNumberToCurrency(0);
+                        
+                        appState.currentCriteriaId = null;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading criteria:', error);
+                });
+        }
+        
+        function saveSalaryCriteria() {
+            const employeeId = criteriaEmployee.value;
+            
+            if (!employeeId) {
+                alert('Vui lòng chọn nhân viên');
+                return;
+            }
+            
+            const employee = appState.employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            const criteriaData = {
+                employeeId: employeeId,
+                employeeName: employee.name,
+                basicSalary: parseCurrencyToNumber(criteriaBasicSalary.value) || 0,
+                allowance: parseCurrencyToNumber(criteriaAllowance.value) || 0,
+                kpiStandard: parseCurrencyToNumber(criteriaKpiStandard.value) || 0,
+                insuranceSalary: parseCurrencyToNumber(criteriaInsuranceSalary.value) || 0,
+                mealAllowance: parseCurrencyToNumber(criteriaMealAllowance.value) || 0,
+                transportAllowance: parseCurrencyToNumber(criteriaTransportAllowance.value) || 0,
+                communicationAllowance: parseCurrencyToNumber(criteriaCommunicationAllowance.value) || 0,
+                updatedAt: new Date().toISOString()
+            };
+            
+            if (appState.currentCriteriaId) {
+                db.collection('salary_criteria').doc(appState.currentCriteriaId).update(criteriaData)
+                    .then(() => {
+                        alert('Đã cập nhật tiêu chí lương thành công!');
+                        loadSalaryCriteria();
+                    })
+                    .catch(error => {
+                        console.error('Error updating criteria:', error);
+                        alert('Có lỗi xảy ra khi cập nhật tiêu chí');
+                    });
+            } else {
+                criteriaData.createdAt = new Date().toISOString();
+                const criteriaId = 'criteria_' + Date.now();
+                
+                db.collection('salary_criteria').doc(criteriaId).set(criteriaData)
+                    .then(() => {
+                        alert('Đã lưu tiêu chí lương thành công!');
+                        appState.currentCriteriaId = criteriaId;
+                        loadSalaryCriteria();
+                    })
+                    .catch(error => {
+                        console.error('Error saving criteria:', error);
+                        alert('Có lỗi xảy ra khi lưu tiêu chí');
+                    });
+            }
+        }
+        
+        function openEditCriteriaModal(criteriaId) {
+            const criterion = appState.salaryCriteria.find(c => c.id === criteriaId);
+            if (!criterion) return;
+            
+            appState.currentCriteriaId = criteriaId;
+            
+            editCriteriaId.value = criteriaId;
+            editCriteriaBasicSalary.value = formatNumberToCurrency(criterion.basicSalary || 0);
+            editCriteriaAllowance.value = formatNumberToCurrency(criterion.allowance || 0);
+            editCriteriaKpiStandard.value = formatNumberToCurrency(criterion.kpiStandard || 0);
+            editCriteriaInsuranceSalary.value = formatNumberToCurrency(criterion.insuranceSalary || 0);
+            editCriteriaMealAllowance.value = formatNumberToCurrency(criterion.mealAllowance || 0);
+            editCriteriaTransportAllowance.value = formatNumberToCurrency(criterion.transportAllowance || 0);
+            editCriteriaCommunicationAllowance.value = formatNumberToCurrency(criterion.communicationAllowance || 0);
+            
+            editCriteriaModal.style.display = 'flex';
+        }
+        
+        function closeCriteriaModal() {
+            editCriteriaModal.style.display = 'none';
+            appState.currentCriteriaId = null;
+        }
+        
+        function updateCriteria() {
+            if (!appState.currentCriteriaId) return;
+            
+            const criteriaData = {
+                basicSalary: parseCurrencyToNumber(editCriteriaBasicSalary.value) || 0,
+                allowance: parseCurrencyToNumber(editCriteriaAllowance.value) || 0,
+                kpiStandard: parseCurrencyToNumber(editCriteriaKpiStandard.value) || 0,
+                insuranceSalary: parseCurrencyToNumber(editCriteriaInsuranceSalary.value) || 0,
+                mealAllowance: parseCurrencyToNumber(editCriteriaMealAllowance.value) || 0,
+                transportAllowance: parseCurrencyToNumber(editCriteriaTransportAllowance.value) || 0,
+                communicationAllowance: parseCurrencyToNumber(editCriteriaCommunicationAllowance.value) || 0,
+                updatedAt: new Date().toISOString()
+            };
+            
+            db.collection('salary_criteria').doc(appState.currentCriteriaId).update(criteriaData)
+                .then(() => {
+                    alert('Đã cập nhật tiêu chí lương thành công!');
+                    closeCriteriaModal();
+                    loadSalaryCriteria();
+                })
+                .catch(error => {
+                    console.error('Error updating criteria:', error);
+                    alert('Có lỗi xảy ra khi cập nhật tiêu chí');
+                });
+        }
+        
+        function deleteCriterion(criteriaId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa tiêu chí lương này?')) return;
+            
+            db.collection('salary_criteria').doc(criteriaId).delete()
+                .then(() => {
+                    alert('Đã xóa tiêu chí lương thành công!');
+                    loadSalaryCriteria();
+                })
+                .catch(error => {
+                    console.error('Error deleting criteria:', error);
+                    alert('Có lỗi xảy ra khi xóa tiêu chí');
+                });
+        }
+        
+        function deleteCriteria() {
+            if (!appState.currentCriteriaId) return;
+            deleteCriterion(appState.currentCriteriaId);
+            closeCriteriaModal();
+        }
+        
+        function loadInternalData() {
+            const employeeId = internalEmployee.value;
+            const month = internalMonth.value;
+            
+            if (!employeeId || !month) {
+                internalEmployeeInfo.style.display = 'none';
+                return;
+            }
+            
+            const employee = appState.employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            db.collection('salary_criteria')
+                .where('employeeId', '==', employeeId)
+                .get()
+                .then(snapshot => {
+                    let criterion = null;
+                    if (!snapshot.empty) {
+                        criterion = snapshot.docs[0].data();
+                    }
+                    
+                    internalAvatar.textContent = getInitials(employee.name);
+                    internalName.textContent = employee.name;
+                    internalPosition.textContent = employee.position || 'Nhân viên';
+                    
+                    const monthFormatted = month ? 
+                        `Tháng ${new Date(month + '-01').getMonth() + 1}/${new Date(month + '-01').getFullYear()}` : 'N/A';
+                    internalMonthText.textContent = monthFormatted;
+                    
+                    internalBasicSalaryText.textContent = formatCurrency(criterion?.basicSalary || 0);
+                    internalAllowanceText.textContent = formatCurrency(criterion?.allowance || 0);
+                    
+                    internalEmployeeInfo.style.display = 'block';
+                    
+                    updateInternalWorkingDays();
+                    
+                    checkExistingSalary(employeeId, month, 'internal');
+                })
+                .catch(error => {
+                    console.error('Error loading internal data:', error);
+                });
+        }
+        
+        function updateInternalWorkingDays() {
+            const month = internalMonth.value;
+            if (!month) return;
+            
+            const [year, monthNum] = month.split('-');
+            const totalDays = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+            let workingDays = 0;
+            
+            for (let day = 1; day <= totalDays; day++) {
+                const date = new Date(parseInt(year), parseInt(monthNum) - 1, day);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    workingDays++;
+                }
+            }
+            
+            appState.currentMonthWorkingDays = workingDays;
+            
+            const monthFormatted = `Tháng ${parseInt(monthNum)}/${year}`;
+            currentMonthText.textContent = monthFormatted;
+            totalWorkingDays.textContent = `${workingDays} ngày`;
+            maxWorkDays.textContent = workingDays;
+            
+            updateInternalDisplay();
+        }
+        
+        function updateInternalDisplay() {
+            const enteredDays = parseFloat(internalWorkDays.value) || 0;
+            const maxDays = appState.currentMonthWorkingDays;
+            
+            enteredWorkDays.textContent = `${enteredDays} ngày`;
+            const ratio = maxDays > 0 ? (enteredDays / maxDays * 100).toFixed(2) : 0;
+            workDaysRatio.textContent = `${enteredDays}/${maxDays} (${ratio}%)`;
+        }
+        
+        function calculateInternalSalary() {
+            const employeeId = internalEmployee.value;
+            const month = internalMonth.value;
+            const workDays = parseFloat(internalWorkDays.value) || 0;
+            const kpiPercentage = parseFloat(internalKpiPercentage.value) || 0;
+            const kpiAdjustment = parseCurrencyToNumber(internalKpiAdjustment.value) || 0;
+            const otherDeductions = parseCurrencyToNumber(internalOtherDeductions.value) || 0;
+            
+            if (!employeeId || !month || workDays <= 0) {
+                alert('Vui lòng nhập đầy đủ thông tin: chọn nhân viên, tháng, và ngày công');
+                return;
+            }
+            
+            const criterion = appState.salaryCriteria.find(c => 
+                c.employeeId === employeeId
+            );
+            
+            if (!criterion) {
+                alert('Chưa có tiêu chí lương cho nhân viên này. Vui lòng tạo tiêu chí ở Tab 2 trước.');
+                return;
+            }
+            
+            const maxDays = appState.currentMonthWorkingDays;
+            const daysRatio = maxDays > 0 ? workDays / maxDays : 0;
+            
+            const basicSalary = criterion.basicSalary || 0;
+            const allowance = criterion.allowance || 0;
+            const kpiStandard = criterion.kpiStandard || 0;
+            const insuranceSalary = criterion.insuranceSalary || 0;
+            
+            const kpiActual = kpiStandard * (kpiPercentage / 100);
+            const totalBefore = basicSalary + allowance + kpiActual + kpiAdjustment;
+            const totalByDays = totalBefore * daysRatio;
+            
+            const insuranceDeduction = insuranceSalary * 0.105 * daysRatio;
+            
+            const totalAfterDeductions = totalByDays - insuranceDeduction - otherDeductions;
+            
+            internalTotalBefore.textContent = formatCurrency(totalBefore);
+            internalDaysRatio.textContent = `${workDays}/${maxDays} (${(daysRatio * 100).toFixed(2)}%)`;
+            internalByDays.textContent = formatCurrency(totalByDays);
+            internalBhDeduction.textContent = formatCurrency(-insuranceDeduction);
+            internalOtherDeduct.textContent = formatCurrency(-otherDeductions);
+            internalFinalSalary.textContent = formatCurrency(totalAfterDeductions);
+            
+            appState.lastInternalSalary = totalAfterDeductions;
+            
+            appState.currentSalaryData = {
+                employeeId: employeeId,
+                month: month,
+                workDays: workDays,
+                internal: {
+                    basicSalary: basicSalary,
+                    allowance: allowance,
+                    kpiStandard: kpiStandard,
+                    kpiPercentage: kpiPercentage,
+                    kpiActual: kpiActual,
+                    kpiAdjustment: kpiAdjustment,
+                    insuranceSalary: insuranceSalary,
+                    insuranceDeduction: insuranceDeduction,
+                    otherDeductions: otherDeductions,
+                    totalByDays: totalByDays,
+                    finalSalary: totalAfterDeductions
+                }
+            };
+            
+            return totalAfterDeductions;
+        }
+        
+        function checkExistingSalary(employeeId, month, type) {
+            db.collection('salary_records')
+                .where('employeeId', '==', employeeId)
+                .where('month', '==', month)
+                .where('type', '==', type)
+                .get()
+                .then(snapshot => {
+                    if (!snapshot.empty) {
+                        const record = snapshot.docs[0].data();
+                        const recordId = snapshot.docs[0].id;
+                        
+                        if (type === 'internal') {
+                            internalWorkDays.value = record.workDays || 0;
+                            internalKpiPercentage.value = record.data?.kpiPercentage || 0;
+                            internalKpiAdjustment.value = formatNumberToCurrency(record.data?.kpiAdjustment || 0);
+                            internalOtherDeductions.value = formatNumberToCurrency(record.data?.otherDeductions || 0);
+                            
+                            editInternalBtn.style.display = 'inline-block';
+                            deleteInternalBtn.style.display = 'inline-block';
+                            saveInternalSalaryBtn.style.display = 'none';
+                            
+                            appState.currentSalaryData = {
+                                ...appState.currentSalaryData,
+                                recordId: recordId
+                            };
+                            
+                            calculateInternalSalary();
+                        }
+                    } else {
+                        if (type === 'internal') {
+                            editInternalBtn.style.display = 'none';
+                            deleteInternalBtn.style.display = 'none';
+                            saveInternalSalaryBtn.style.display = 'inline-block';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking existing salary:', error);
+                });
+        }
+        
+        function saveInternalSalary() {
+            if (!appState.currentSalaryData || !appState.currentSalaryData.internal) {
+                alert('Vui lòng tính toán lương trước khi lưu!');
+                return;
+            }
+            
+            const employee = appState.employees.find(emp => emp.id === appState.currentSalaryData.employeeId);
+            if (!employee) return;
+            
+            const salaryRecord = {
+                employeeId: appState.currentSalaryData.employeeId,
+                employeeName: employee.name,
+                month: appState.currentSalaryData.month,
+                workDays: appState.currentSalaryData.workDays,
+                type: 'internal',
+                data: appState.currentSalaryData.internal,
+                totalSalary: appState.currentSalaryData.internal.finalSalary,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            const recordId = 'salary_' + Date.now();
+            
+            db.collection('salary_records').doc(recordId).set(salaryRecord)
+                .then(() => {
+                    alert('Đã lưu lương nội bộ thành công!');
+                    editInternalBtn.style.display = 'inline-block';
+                    deleteInternalBtn.style.display = 'inline-block';
+                    saveInternalSalaryBtn.style.display = 'none';
+                    
+                    appState.currentSalaryData.recordId = recordId;
+                })
+                .catch(error => {
+                    console.error('Error saving internal salary:', error);
+                    alert('Có lỗi xảy ra khi lưu lương');
+                });
+        }
+        
+        // TỰ ĐỘNG TÍNH LƯƠNG HỢP ĐỒNG TỪ TAB 3
+        function autoCalculateTaxSalary() {
+            if (!appState.autoSyncData || !appState.autoSyncData.internalSalary) {
+                console.log('Không có dữ liệu từ Tab 3 để tính toán tự động');
+                return;
+            }
+            
+            const employeeId = appState.autoSyncData.employeeId;
+            const month = appState.autoSyncData.month;
+            const workDays = appState.autoSyncData.workDays;
+            const internalSalary = appState.autoSyncData.internalSalary;
+            
+            if (!employeeId || !month || workDays <= 0) {
+                console.log('Dữ liệu từ Tab 3 không đầy đủ');
+                return;
+            }
+            
+            const criterion = appState.salaryCriteria.find(c => 
+                c.employeeId === employeeId
+            );
+            
+            if (!criterion) {
+                console.log('Không tìm thấy tiêu chí lương cho nhân viên này');
+                return;
+            }
+            
+            // Tính toán số ngày công tối đa cho tháng
+            const [year, monthNum] = month.split('-');
+            const totalDays = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+            let maxWorkingDays = 0;
+            
+            for (let day = 1; day <= totalDays; day++) {
+                const date = new Date(parseInt(year), parseInt(monthNum) - 1, day);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    maxWorkingDays++;
+                }
+            }
+            
+            const daysRatio = maxWorkingDays > 0 ? workDays / maxWorkingDays : 0;
+            
+            const insuranceSalary = criterion.insuranceSalary || 0;
+            const mealAllowance = criterion.mealAllowance || 0;
+            const transportAllowance = criterion.transportAllowance || 0;
+            const communicationAllowance = criterion.communicationAllowance || 0;
+            const kpiStandard = criterion.kpiStandard || 0;
+            
+            // Tính các khoản phụ cấp theo ngày công
+            const actualInsurance = insuranceSalary * daysRatio;
+            const totalMeal = mealAllowance * workDays;
+            const totalTransport = transportAllowance * daysRatio;
+            const totalCommunication = communicationAllowance * daysRatio;
+            
+            const insuranceDeduction = insuranceSalary * 0.105 * daysRatio;
+            
+            // Tính KPI cần thiết để cân bằng với lương nội bộ
+            // Công thức: Lương hợp đồng = Lương nội bộ
+            // => (actualInsurance + totalMeal + totalTransport + totalCommunication + kpiActual - insuranceDeduction) = internalSalary
+            // => kpiActual = internalSalary - actualInsurance - totalMeal - totalTransport - totalCommunication + insuranceDeduction
+            
+            const requiredKpi = internalSalary - actualInsurance - totalMeal - totalTransport - totalCommunication + insuranceDeduction;
+            
+            // Tính % KPI cần đạt
+            const requiredPercentage = kpiStandard > 0 ? (requiredKpi / kpiStandard) * 100 : 0;
+            
+            // Giới hạn KPI trong khoảng hợp lý (0-200%)
+            const safePercentage = Math.max(0, Math.min(200, requiredPercentage));
+            const safeKpi = kpiStandard * (safePercentage / 100);
+            
+            // Tính tổng lương hợp đồng với KPI đã điều chỉnh
+            const totalSalary = actualInsurance + totalMeal + totalTransport + totalCommunication + safeKpi - insuranceDeduction;
+            
+            // Cập nhật hiển thị
+            taxInsuranceSalary.textContent = formatCurrency(actualInsurance);
+            taxMealAllowance.textContent = formatCurrency(totalMeal);
+            taxTransportAllowance.textContent = formatCurrency(totalTransport);
+            taxCommunicationAllowance.textContent = formatCurrency(totalCommunication);
+            taxKpiActual.textContent = formatCurrency(safeKpi);
+            taxBhDeduction.textContent = formatCurrency(-insuranceDeduction);
+            taxKpiAdjust.textContent = formatCurrency(0);
+            taxOtherDeduct.textContent = formatCurrency(0);
+            taxFinalSalary.textContent = formatCurrency(totalSalary);
+            
+            // Lưu dữ liệu tính toán
+            appState.currentSalaryData = {
+                ...appState.currentSalaryData,
+                employeeId: employeeId,
+                month: month,
+                workDays: workDays,
+                tax: {
+                    insuranceSalary: insuranceSalary,
+                    insuranceDeduction: insuranceDeduction,
+                    mealAllowance: mealAllowance,
+                    totalMeal: totalMeal,
+                    transportAllowance: transportAllowance,
+                    totalTransport: totalTransport,
+                    communicationAllowance: communicationAllowance,
+                    totalCommunication: totalCommunication,
+                    kpiActual: safeKpi,
+                    kpiAdjustment: 0,
+                    otherDeductions: 0,
+                    kpiPercentage: safePercentage,
+                    finalSalary: totalSalary
+                }
+            };
+            
+            // Kiểm tra xem đã có bản ghi lương hợp đồng chưa
+            checkExistingSalary(employeeId, month, 'tax');
+        }
+        
+        function saveTaxSalary() {
+            if (!appState.currentSalaryData || !appState.currentSalaryData.tax) {
+                alert('Vui lòng tính toán lương trước khi lưu!');
+                return;
+            }
+            
+            const employee = appState.employees.find(emp => emp.id === appState.currentSalaryData.employeeId);
+            if (!employee) return;
+            
+            const salaryRecord = {
+                employeeId: appState.currentSalaryData.employeeId,
+                employeeName: employee.name,
+                month: appState.currentSalaryData.month,
+                workDays: appState.currentSalaryData.workDays,
+                type: 'tax',
+                data: appState.currentSalaryData.tax,
+                totalSalary: appState.currentSalaryData.tax.finalSalary,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            const recordId = 'salary_' + Date.now();
+            
+            db.collection('salary_records').doc(recordId).set(salaryRecord)
+                .then(() => {
+                    alert('Đã lưu lương hợp đồng thành công!');
+                    editTaxBtn.style.display = 'inline-block';
+                    deleteTaxBtn.style.display = 'inline-block';
+                    saveTaxSalaryBtn.style.display = 'none';
+                    
+                    appState.currentSalaryData.recordId = recordId;
+                })
+                .catch(error => {
+                    console.error('Error saving tax salary:', error);
+                    alert('Có lỗi xảy ra khi lưu lương');
+                });
+        }
+        
+        function loadSalaryRecords() {
+            salaryLoading.style.display = 'block';
+            salaryRecordsTable.style.display = 'none';
+            
+            let query = db.collection('salary_records').orderBy('createdAt', 'desc');
+            
+            const filterMonthValue = filterMonth.value;
+            const filterEmployeeValue = filterEmployee.value;
+            
+            if (filterMonthValue) {
+                query = query.where('month', '==', filterMonthValue);
+            }
+            
+            if (filterEmployeeValue) {
+                query = query.where('employeeId', '==', filterEmployeeValue);
+            }
+            
+            query.get()
+                .then(snapshot => {
+                    const records = [];
+                    snapshot.forEach(doc => {
+                        records.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    renderSalaryRecords(records);
+                    salaryLoading.style.display = 'none';
+                    salaryRecordsTable.style.display = 'table';
+                })
+                .catch(error => {
+                    console.error('Error loading salary records:', error);
+                    salaryLoading.innerHTML = '<p style="color: red;">Lỗi tải dữ liệu</p>';
+                });
+        }
+        
+        function renderSalaryRecords(records = appState.salaryRecords) {
+            salaryRecordsBody.innerHTML = '';
+            
+            if (records.length === 0) {
+                salaryRecordsBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-file-invoice-dollar" style="font-size: 48px; color: #ddd;"></i>
+                            <p>Không có bảng lương nào</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            records.forEach((record, index) => {
+                const row = document.createElement('tr');
+                
+                const createdDate = record.createdAt ? 
+                    new Date(record.createdAt).toLocaleDateString('vi-VN') : 'N/A';
+                
+                const month = record.month || 'N/A';
+                const monthFormatted = month !== 'N/A' ? 
+                    `Tháng ${new Date(month + '-01').getMonth() + 1}/${new Date(month + '-01').getFullYear()}` : 'N/A';
+                
+                const status = record.type === 'internal' ? 'Nội bộ' : 'Hợp đồng';
+                const statusColor = record.type === 'internal' ? 'blue' : 'green';
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${record.employeeName || 'N/A'}</td>
+                    <td>${monthFormatted}</td>
+                    <td>${record.workDays || 0} ngày</td>
+                    <td>${record.type === 'internal' ? formatCurrency(record.totalSalary || 0) : '-'}</td>
+                    <td>${record.type === 'tax' ? formatCurrency(record.totalSalary || 0) : '-'}</td>
+                    <td>${createdDate}</td>
+                    <td><span style="color: ${statusColor}; font-weight: bold;">${status}</span></td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="viewSalaryDetail('${record.id}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-success btn-sm" onclick="exportSalaryExcel('${record.id}')">
+                            <i class="fas fa-file-excel"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSalaryRecord('${record.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                
+                salaryRecordsBody.appendChild(row);
+            });
+        }
+        
+        function viewSalaryDetail(recordId) {
+            const record = appState.salaryRecords.find(r => r.id === recordId);
+            if (!record) return;
+            
+            let detail = `Chi tiết bảng lương:\n\n` +
+                  `Nhân viên: ${record.employeeName}\n` +
+                  `Tháng: ${record.month}\n` +
+                  `Ngày công: ${record.workDays} ngày\n` +
+                  `Loại: ${record.type === 'internal' ? 'Nội bộ' : 'Hợp đồng'}\n` +
+                  `Tổng lương: ${formatCurrency(record.totalSalary || 0)}\n\n`;
+            
+            if (record.type === 'internal') {
+                detail += `Chi tiết:\n` +
+                         `- Lương cơ bản: ${formatCurrency(record.data?.basicSalary || 0)}\n` +
+                         `- Phụ cấp: ${formatCurrency(record.data?.allowance || 0)}\n` +
+                         `- KPI: ${formatCurrency(record.data?.kpiActual || 0)}\n` +
+                         `- Trừ BH: ${formatCurrency(record.data?.insuranceDeduction || 0)}\n` +
+                         `- Trừ khác: ${formatCurrency(record.data?.otherDeductions || 0)}`;
+            } else {
+                detail += `Chi tiết:\n` +
+                         `- Lương BH: ${formatCurrency(record.data?.insuranceSalary || 0)}\n` +
+                         `- Phụ cấp cơm: ${formatCurrency(record.data?.totalMeal || 0)}\n` +
+                         `- Phụ cấp xăng: ${formatCurrency(record.data?.totalTransport || 0)}\n` +
+                         `- Phụ cấp liên lạc: ${formatCurrency(record.data?.totalCommunication || 0)}\n` +
+                         `- KPI: ${formatCurrency(record.data?.kpiActual || 0)}\n` +
+                         `- Trừ BH: ${formatCurrency(record.data?.insuranceDeduction || 0)}`;
+            }
+            
+            alert(detail);
+        }
+        
+        function exportSalaryExcel(recordId) {
+            const record = appState.salaryRecords.find(r => r.id === recordId);
+            if (!record) return;
+            
+            // Tạo workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Tạo dữ liệu cho sheet
+            const monthFormatted = record.month ? 
+                `Tháng ${new Date(record.month + '-01').getMonth() + 1}/${new Date(record.month + '-01').getFullYear()}` : 'N/A';
+            
+            // Tiêu đề
+            const title = `BẢNG THU NHẬP THÁNG ${monthFormatted}`;
+            
+            // Tạo dữ liệu Excel
+            const data = [
+                [title],
+                [''],
+                [`Nhân viên: ${record.employeeName || 'N/A'}`],
+                [`Tháng lương: ${monthFormatted}`],
+                [`Ngày công: ${record.workDays || 0} ngày`],
+                [`Loại lương: ${record.type === 'internal' ? 'Nội bộ' : 'Hợp đồng'}`],
+                [`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}`],
+                [''],
+                ['STT', 'Nội dung', 'Số tiền (VNĐ)', 'Ghi chú']
+            ];
+            
+            if (record.type === 'internal') {
+                data.push(
+                    ['1', 'Lương cơ bản', formatNumberToCurrency(record.data?.basicSalary || 0), ''],
+                    ['2', 'Phụ cấp chức vụ', formatNumberToCurrency(record.data?.allowance || 0), ''],
+                    ['3', 'Thu nhập KPI', formatNumberToCurrency(record.data?.kpiActual || 0), ''],
+                    ['4', 'Trừ BH người lao động', formatNumberToCurrency(-(record.data?.insuranceDeduction || 0)), '10.5%'],
+                    ['5', 'Trừ khác', formatNumberToCurrency(-(record.data?.otherDeductions || 0)), ''],
+                    ['', 'TỔNG LƯƠNG', formatNumberToCurrency(record.totalSalary || 0), '']
+                );
+            } else {
+                data.push(
+                    ['1', 'Lương tính bảo hiểm', formatNumberToCurrency(record.data?.insuranceSalary || 0), ''],
+                    ['2', 'Phụ cấp cơm trưa', formatNumberToCurrency(record.data?.totalMeal || 0), ''],
+                    ['3', 'Phụ cấp xăng xe', formatNumberToCurrency(record.data?.totalTransport || 0), ''],
+                    ['4', 'Phụ cấp liên lạc', formatNumberToCurrency(record.data?.totalCommunication || 0), ''],
+                    ['5', 'Thu nhập KPI', formatNumberToCurrency(record.data?.kpiActual || 0), ''],
+                    ['6', 'Trừ BH người lao động', formatNumberToCurrency(-(record.data?.insuranceDeduction || 0)), '10.5%'],
+                    ['7', 'Trừ khác', formatNumberToCurrency(-(record.data?.otherDeductions || 0)), ''],
+                    ['', 'TỔNG LƯƠNG', formatNumberToCurrency(record.totalSalary || 0), '']
+                );
+            }
+            
+            // Thêm phần ký
+            data.push(
+                [''],
+                ['', '', 'Người nhận lương', 'Kế toán trưởng'],
+                ['', '', '(Ký, ghi rõ họ tên)', '(Ký, ghi rõ họ tên)'],
+                ['', '', record.employeeName || '', 'Trần Thị B']
+            );
+            
+            // Tạo worksheet
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Đặt chiều rộng cột
+            const wscols = [
+                {wch: 5},  // STT
+                {wch: 25}, // Nội dung
+                {wch: 20}, // Số tiền
+                {wch: 15}  // Ghi chú
+            ];
+            ws['!cols'] = wscols;
+            
+            // Merge cells cho tiêu đề
+            ws['!merges'] = [
+                XLSX.utils.decode_range("A1:D1")
+            ];
+            
+            // Thêm worksheet vào workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Bảng lương");
+            
+            // Xuất file
+            const safeName = record.employeeName.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').replace(/\s+/g, '_');
+            const fileName = `Bang_luong_${safeName}_${record.month}_${record.type}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+        
+        function deleteSalaryRecord(recordId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa bảng lương này?')) return;
+            
+            db.collection('salary_records').doc(recordId).delete()
+                .then(() => {
+                    alert('Đã xóa bảng lương thành công!');
+                    loadSalaryRecords();
+                })
+                .catch(error => {
+                    console.error('Error deleting salary record:', error);
+                    alert('Có lỗi xảy ra khi xóa bảng lương');
+                });
+        }
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target === editEmployeeModal) {
+                closeEmployeeModal();
+            }
+            if (event.target === editCriteriaModal) {
+                closeCriteriaModal();
+            }
+        };
+    </script>
+</body>
+</html>
