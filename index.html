@@ -160,18 +160,20 @@
             display: flex;
             background: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
+            overflow-x: auto;
         }
         
         .tab-btn {
-            padding: 15px 30px;
+            padding: 15px 20px;
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             color: #6c757d;
             border-bottom: 3px solid transparent;
             transition: all 0.3s;
+            white-space: nowrap;
         }
         
         .tab-btn:hover {
@@ -490,6 +492,24 @@
             color: #999;
         }
         
+        /* Password Modal */
+        .password-modal {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .password-input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
         /* Salary Criteria List */
         .criteria-list {
             display: grid;
@@ -675,6 +695,30 @@
             font-size: 14px;
         }
         
+        /* Insurance Summary */
+        .insurance-summary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .summary-row.total {
+            font-size: 18px;
+            font-weight: bold;
+            border-top: 2px solid rgba(255,255,255,0.3);
+            margin-top: 10px;
+            padding-top: 15px;
+        }
+        
         @keyframes pulse {
             0% { opacity: 0.5; }
             50% { opacity: 1; }
@@ -691,6 +735,22 @@
         .justify-between { justify-content: space-between; }
         .align-center { align-items: center; }
         .w-100 { width: 100%; }
+        
+        /* Spinner */
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         
         /* Responsive */
         @media (max-width: 768px) {
@@ -737,7 +797,7 @@
                 <i class="fas fa-exclamation-circle"></i> Mật khẩu không đúng
             </div>
             <div class="mt-20">
-                <p><strong>Mật khẩu:</strong> Cấp quyền</p>
+                <p><strong>Mật khẩu:</strong> ketoan@@2026</p>
             </div>
         </div>
     </div>
@@ -788,6 +848,9 @@
                 </button>
                 <button class="tab-btn" data-tab="tab5">
                     <i class="fas fa-history"></i> Danh sách bảng lương
+                </button>
+                <button class="tab-btn" data-tab="tab6">
+                    <i class="fas fa-shield-alt"></i> Thống kê BH
                 </button>
             </div>
             
@@ -1269,6 +1332,92 @@
                         </table>
                     </div>
                 </div>
+                
+                <!-- Tab 6: Insurance Statistics -->
+                <div id="tab6" class="tab-pane">
+                    <div class="form-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-shield-alt"></i> Thống kê đóng bảo hiểm công ty
+                        </h2>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Thông tin:</strong> Tổng số tiền đóng bảo hiểm công ty = 21.5% × Tổng lương khai bảo hiểm của tất cả nhân viên trong tháng.
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid mb-20">
+                            <div class="form-group">
+                                <label class="form-label">Chọn tháng thống kê</label>
+                                <input type="month" id="insuranceMonth" class="form-control">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" id="calculateInsuranceBtn">
+                                    <i class="fas fa-calculator"></i> Tính bảo hiểm
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Insurance Summary -->
+                        <div class="insurance-summary" id="insuranceSummary" style="display: none;">
+                            <h3 style="margin-bottom: 20px;">Tổng hợp đóng bảo hiểm</h3>
+                            <div class="summary-row">
+                                <span>Tháng:</span>
+                                <span id="summaryMonth">Tháng 1/2026</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Tổng lương khai BH:</span>
+                                <span id="totalInsuranceSalary">0 VNĐ</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Tỷ lệ đóng BH công ty:</span>
+                                <span>21.5%</span>
+                            </div>
+                            <div class="summary-row total">
+                                <span>Tổng tiền đóng BH công ty:</span>
+                                <span id="totalCompanyInsurance">0 VNĐ</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Insurance Details Table -->
+                        <div id="insuranceDetails" style="display: none;">
+                            <h3 class="section-title mt-20">
+                                <i class="fas fa-list"></i> Chi tiết từng nhân viên
+                            </h3>
+                            
+                            <div id="insuranceLoading" class="text-center" style="padding: 40px;">
+                                <div class="spinner"></div>
+                                <p>Đang tải dữ liệu...</p>
+                            </div>
+                            
+                            <table class="salary-table" id="insuranceTable" style="display: none;">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Nhân viên</th>
+                                        <th>Lương khai BH</th>
+                                        <th>BH người lao động (10.5%)</th>
+                                        <th>BH công ty (21.5%)</th>
+                                        <th>Tổng BH phải nộp</th>
+                                        <th>Ngày công</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="insuranceBody">
+                                    <!-- Insurance details will be loaded here -->
+                                </tbody>
+                            </table>
+                            
+                            <div class="text-right mt-20">
+                                <button class="btn btn-success" id="exportInsuranceBtn">
+                                    <i class="fas fa-file-excel"></i> Xuất Excel BH
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -1368,12 +1517,30 @@
                     </div>
                     
                     <div class="d-flex justify-between mt-20">
-                        <button class="btn btn-danger" onclick="deleteCriteria()">
+                        <button class="btn btn-danger" onclick="requestDeleteCriteria()">
                             <i class="fas fa-trash"></i> Xóa
                         </button>
                         <button class="btn btn-success" onclick="updateCriteria()">
                             <i class="fas fa-save"></i> Cập nhật
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Password Verification Modal -->
+        <div id="passwordModal" class="modal">
+            <div class="password-modal">
+                <div class="modal-header">
+                    <h3>Xác nhận mật khẩu</h3>
+                    <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Vui lòng nhập mật khẩu để xác nhận thao tác:</p>
+                    <input type="password" id="verifyPassword" class="password-input" placeholder="Nhập mật khẩu">
+                    <div class="d-flex justify-between mt-20">
+                        <button class="btn btn-secondary" onclick="closePasswordModal()">Hủy</button>
+                        <button class="btn btn-danger" onclick="verifyPassword()">Xác nhận</button>
                     </div>
                 </div>
             </div>
@@ -1407,7 +1574,9 @@
             currentSalaryData: null,
             currentMonthWorkingDays: 26,
             lastInternalSalary: 0,
-            autoSyncData: null // Dữ liệu tự động đồng bộ từ Tab 3
+            autoSyncData: null,
+            pendingAction: null,
+            pendingActionData: null
         };
         
         // Password for app access
@@ -1439,7 +1608,7 @@
         const empTitle = document.getElementById('empTitle');
         const empDepartment = document.getElementById('empDepartment');
         
-        // Salary Criteria (đã bỏ tháng áp dụng)
+        // Salary Criteria
         const criteriaEmployee = document.getElementById('criteriaEmployee');
         const criteriaBasicSalary = document.getElementById('criteriaBasicSalary');
         const criteriaAllowance = document.getElementById('criteriaAllowance');
@@ -1486,7 +1655,7 @@
         const editInternalBtn = document.getElementById('editInternalBtn');
         const deleteInternalBtn = document.getElementById('deleteInternalBtn');
         
-        // Tax Salary Calculation - TỰ ĐỘNG ĐỒNG BỘ
+        // Tax Salary Calculation
         const autoSyncIndicator = document.getElementById('autoSyncIndicator');
         const smartComparisonSection = document.getElementById('smartComparisonSection');
         const autoSyncEmployee = document.getElementById('autoSyncEmployee');
@@ -1517,6 +1686,19 @@
         const filterEmployee = document.getElementById('filterEmployee');
         const filterBtn = document.getElementById('filterBtn');
         
+        // Insurance Statistics
+        const insuranceMonth = document.getElementById('insuranceMonth');
+        const calculateInsuranceBtn = document.getElementById('calculateInsuranceBtn');
+        const insuranceSummary = document.getElementById('insuranceSummary');
+        const summaryMonth = document.getElementById('summaryMonth');
+        const totalInsuranceSalary = document.getElementById('totalInsuranceSalary');
+        const totalCompanyInsurance = document.getElementById('totalCompanyInsurance');
+        const insuranceDetails = document.getElementById('insuranceDetails');
+        const insuranceLoading = document.getElementById('insuranceLoading');
+        const insuranceTable = document.getElementById('insuranceTable');
+        const insuranceBody = document.getElementById('insuranceBody');
+        const exportInsuranceBtn = document.getElementById('exportInsuranceBtn');
+        
         // Sync status
         const syncStatus = document.getElementById('syncStatus');
         const syncIndicator = document.getElementById('syncIndicator');
@@ -1541,10 +1723,13 @@
         const editCriteriaTransportAllowance = document.getElementById('editCriteriaTransportAllowance');
         const editCriteriaCommunicationAllowance = document.getElementById('editCriteriaCommunicationAllowance');
         
-        // Utility functions for currency formatting
+        // Password modal
+        const passwordModal = document.getElementById('passwordModal');
+        const verifyPasswordInput = document.getElementById('verifyPassword');
+        
+        // Utility functions
         function formatNumberToCurrency(number) {
             if (typeof number === 'string') {
-                // Remove all non-digit characters
                 number = number.replace(/[^\d]/g, '');
                 number = parseInt(number || 0);
             }
@@ -1553,13 +1738,25 @@
         
         function parseCurrencyToNumber(currencyString) {
             if (!currencyString) return 0;
-            // Remove all non-digit characters
             const number = parseInt(currencyString.replace(/[^\d]/g, '') || 0);
             return number;
         }
         
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                minimumFractionDigits: 0
+            }).format(amount);
+        }
+        
+        function getInitials(name) {
+            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+        
         // Initialize app
         function initApp() {
+            // Check if user is logged in
             const isLoggedIn = localStorage.getItem('hr_salary_pro_logged_in') === 'true';
             
             if (isLoggedIn) {
@@ -1575,22 +1772,18 @@
         }
         
         function setupCurrencyInputs() {
-            // Setup currency formatting for all currency inputs
             const currencyInputs = document.querySelectorAll('.currency');
             currencyInputs.forEach(input => {
-                // Format on blur
                 input.addEventListener('blur', function() {
                     const value = parseCurrencyToNumber(this.value);
                     this.value = formatNumberToCurrency(value);
                 });
                 
-                // Remove formatting on focus for easy editing
                 input.addEventListener('focus', function() {
                     const value = parseCurrencyToNumber(this.value);
                     this.value = value || '';
                 });
                 
-                // Format initial value
                 const initialValue = parseCurrencyToNumber(input.value);
                 input.value = formatNumberToCurrency(initialValue);
             });
@@ -1611,10 +1804,12 @@
             const year = today.getFullYear();
             const month = String(today.getMonth() + 1).padStart(2, '0');
             
+            // Set default dates
             empDob.value = '1990-01-01';
             empJoinDate.value = today.toISOString().split('T')[0];
             internalMonth.value = `${year}-${month}`;
             filterMonth.value = `${year}-${month}`;
+            insuranceMonth.value = `${year}-${month}`;
         }
         
         function setupEventListeners() {
@@ -1630,23 +1825,22 @@
             // Tab navigation
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    // Remove active class from all tabs
                     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                     document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
                     
-                    // Add active class to clicked tab
                     this.classList.add('active');
                     const tabId = this.getAttribute('data-tab');
                     document.getElementById(tabId).classList.add('active');
                     
-                    // Load data for tab
+                    // Load data for active tab
                     if (tabId === 'tab2') {
                         loadSalaryCriteria();
                     } else if (tabId === 'tab5') {
                         loadSalaryRecords();
                     } else if (tabId === 'tab4') {
-                        // Khi chuyển sang Tab 4, tự động đồng bộ từ Tab 3
                         autoSyncFromTab3();
+                    } else if (tabId === 'tab6') {
+                        loadInsuranceData();
                     }
                 });
             });
@@ -1666,6 +1860,7 @@
             internalWorkDays.addEventListener('input', updateInternalDisplay);
             calculateInternalBtn.addEventListener('click', calculateInternalSalary);
             saveInternalSalaryBtn.addEventListener('click', saveInternalSalary);
+            deleteInternalBtn.addEventListener('click', () => requestDeleteSalary('internal'));
             
             // Auto-calculate for Tab 3
             [internalKpiPercentage, internalKpiAdjustment, internalOtherDeductions].forEach(input => {
@@ -1677,15 +1872,77 @@
             
             // Save tax salary
             saveTaxSalaryBtn.addEventListener('click', saveTaxSalary);
+            deleteTaxBtn.addEventListener('click', () => requestDeleteSalary('tax'));
+            
+            // Insurance statistics
+            calculateInsuranceBtn.addEventListener('click', calculateInsurance);
+            exportInsuranceBtn.addEventListener('click', exportInsuranceExcel);
+        }
+        
+        // Password verification functions
+        function openPasswordModal(action, data = null) {
+            appState.pendingAction = action;
+            appState.pendingActionData = data;
+            verifyPasswordInput.value = '';
+            passwordModal.style.display = 'flex';
+        }
+        
+        function closePasswordModal() {
+            passwordModal.style.display = 'none';
+            appState.pendingAction = null;
+            appState.pendingActionData = null;
+        }
+        
+        function verifyPassword() {
+            const password = verifyPasswordInput.value;
+            
+            if (password === APP_PASSWORD) {
+                closePasswordModal();
+                
+                // Execute pending action
+                switch(appState.pendingAction) {
+                    case 'deleteCriteria':
+                        deleteCriterion(appState.pendingActionData);
+                        break;
+                    case 'deleteSalary':
+                        deleteSalaryRecord(appState.pendingActionData);
+                        break;
+                    case 'deleteEmployee':
+                        deleteEmployee(appState.pendingActionData);
+                        break;
+                    case 'deleteSalaryRecord':
+                        deleteSalaryRecord(appState.pendingActionData);
+                        break;
+                }
+            } else {
+                alert('Mật khẩu không đúng!');
+                verifyPasswordInput.value = '';
+            }
+        }
+        
+        function requestDeleteCriteria() {
+            if (!appState.currentCriteriaId) return;
+            openPasswordModal('deleteCriteria', appState.currentCriteriaId);
+        }
+        
+        function requestDeleteSalary(type) {
+            if (!appState.currentSalaryData || !appState.currentSalaryData.recordId) return;
+            openPasswordModal('deleteSalary', { id: appState.currentSalaryData.recordId, type: type });
+        }
+        
+        function requestDeleteEmployee(employeeId) {
+            openPasswordModal('deleteEmployee', employeeId);
+        }
+        
+        function requestDeleteSalaryRecord(recordId) {
+            openPasswordModal('deleteSalaryRecord', { id: recordId, type: 'record' });
         }
         
         // TỰ ĐỘNG ĐỒNG BỘ TỪ TAB 3
         function autoSyncFromTab3() {
-            // Kiểm tra xem Tab 3 đã có dữ liệu chưa
             if (appState.currentSalaryData && appState.currentSalaryData.internal) {
                 autoSyncIndicator.style.display = 'flex';
                 
-                // Lưu dữ liệu tự động đồng bộ
                 appState.autoSyncData = {
                     employeeId: appState.currentSalaryData.employeeId,
                     month: appState.currentSalaryData.month,
@@ -1694,7 +1951,6 @@
                     internalData: appState.currentSalaryData.internal
                 };
                 
-                // Hiển thị thông tin đồng bộ
                 const employee = appState.employees.find(emp => emp.id === appState.currentSalaryData.employeeId);
                 if (employee) {
                     autoSyncEmployee.textContent = employee.name;
@@ -1709,13 +1965,11 @@
                 smartComparisonSection.style.display = 'block';
                 autoCalculateNotice.style.display = 'flex';
                 
-                // Tự động tính lương hợp đồng
                 setTimeout(() => {
                     autoCalculateTaxSalary();
                     autoSyncIndicator.style.display = 'none';
                 }, 1000);
             } else {
-                // Nếu Tab 3 chưa có dữ liệu
                 smartComparisonSection.style.display = 'none';
                 autoSyncIndicator.style.display = 'none';
                 autoCalculateNotice.style.display = 'none';
@@ -1723,19 +1977,36 @@
         }
         
         function handleLogin() {
-            if (passwordInput.value === APP_PASSWORD) {
+            const password = passwordInput.value;
+            
+            if (password === APP_PASSWORD) {
+                // Set login flag
                 localStorage.setItem('hr_salary_pro_logged_in', 'true');
-                showMainApp();
-                initFirebase();
+                
+                // Clear password field
                 passwordInput.value = '';
+                
+                // Show main app
+                showMainApp();
+                
+                // Initialize Firebase
+                initFirebase();
+                
+                // Hide error
                 loginError.style.display = 'none';
             } else {
+                // Show error
                 loginError.style.display = 'block';
+                passwordInput.value = '';
+                passwordInput.focus();
             }
         }
         
         function handleLogout() {
+            // Clear login flag
             localStorage.removeItem('hr_salary_pro_logged_in');
+            
+            // Show login screen
             showLoginScreen();
         }
         
@@ -1857,10 +2128,6 @@
             });
         }
         
-        function getInitials(name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-        }
-        
         function renderEmployees() {
             employeesList.innerHTML = '';
             
@@ -1911,7 +2178,7 @@
                         <button class="btn btn-primary" onclick="openEditEmployeeModal('${employee.id}')">
                             <i class="fas fa-edit"></i> Sửa
                         </button>
-                        <button class="btn btn-danger" onclick="deleteEmployee('${employee.id}')">
+                        <button class="btn btn-danger" onclick="requestDeleteEmployee('${employee.id}')">
                             <i class="fas fa-trash"></i> Xóa
                         </button>
                     </div>
@@ -2013,9 +2280,8 @@
         }
         
         function deleteEmployee(employeeId) {
-            if (!confirm('Bạn có chắc chắn muốn xóa nhân viên này? Toàn bộ dữ liệu lương và tiêu chí của nhân viên cũng sẽ bị xóa.')) {
-                return;
-            }
+            // Reset salary calculation fields
+            resetSalaryFields();
             
             db.collection('employees').doc(employeeId).delete()
                 .then(() => {
@@ -2051,9 +2317,49 @@
                 });
         }
         
+        function resetSalaryFields() {
+            // Reset Tab 3 fields
+            internalWorkDays.value = 0;
+            internalKpiPercentage.value = 0;
+            internalKpiAdjustment.value = formatNumberToCurrency(0);
+            internalOtherDeductions.value = formatNumberToCurrency(0);
+            
+            // Reset Tab 3 results
+            internalTotalBefore.textContent = formatCurrency(0);
+            internalDaysRatio.textContent = '0/0 (0%)';
+            internalByDays.textContent = formatCurrency(0);
+            internalBhDeduction.textContent = formatCurrency(0);
+            internalOtherDeduct.textContent = formatCurrency(0);
+            internalFinalSalary.textContent = formatCurrency(0);
+            
+            // Reset Tab 4 results
+            taxInsuranceSalary.textContent = formatCurrency(0);
+            taxMealAllowance.textContent = formatCurrency(0);
+            taxTransportAllowance.textContent = formatCurrency(0);
+            taxCommunicationAllowance.textContent = formatCurrency(0);
+            taxKpiActual.textContent = formatCurrency(0);
+            taxBhDeduction.textContent = formatCurrency(0);
+            taxKpiAdjust.textContent = formatCurrency(0);
+            taxOtherDeduct.textContent = formatCurrency(0);
+            taxFinalSalary.textContent = formatCurrency(0);
+            
+            // Hide edit/delete buttons
+            editInternalBtn.style.display = 'none';
+            deleteInternalBtn.style.display = 'none';
+            saveInternalSalaryBtn.style.display = 'inline-block';
+            
+            editTaxBtn.style.display = 'none';
+            deleteTaxBtn.style.display = 'none';
+            saveTaxSalaryBtn.style.display = 'inline-block';
+            
+            // Clear current salary data
+            appState.currentSalaryData = null;
+            appState.autoSyncData = null;
+        }
+        
         function deleteEmployeePermanently() {
             if (!appState.currentEmployeeId) return;
-            deleteEmployee(appState.currentEmployeeId);
+            requestDeleteEmployee(appState.currentEmployeeId);
             closeEmployeeModal();
         }
         
@@ -2113,7 +2419,7 @@
                             <button class="btn btn-warning btn-sm" onclick="openEditCriteriaModal('${criterion.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteCriterion('${criterion.id}')">
+                            <button class="btn btn-danger btn-sm" onclick="requestDeleteCriteria('${criterion.id}')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -2280,8 +2586,6 @@
         }
         
         function deleteCriterion(criteriaId) {
-            if (!confirm('Bạn có chắc chắn muốn xóa tiêu chí lương này?')) return;
-            
             db.collection('salary_criteria').doc(criteriaId).delete()
                 .then(() => {
                     alert('Đã xóa tiêu chí lương thành công!');
@@ -2291,12 +2595,6 @@
                     console.error('Error deleting criteria:', error);
                     alert('Có lỗi xảy ra khi xóa tiêu chí');
                 });
-        }
-        
-        function deleteCriteria() {
-            if (!appState.currentCriteriaId) return;
-            deleteCriterion(appState.currentCriteriaId);
-            closeCriteriaModal();
         }
         
         function loadInternalData() {
@@ -2473,12 +2771,20 @@
                             };
                             
                             calculateInternalSalary();
+                        } else if (type === 'tax') {
+                            editTaxBtn.style.display = 'inline-block';
+                            deleteTaxBtn.style.display = 'inline-block';
+                            saveTaxSalaryBtn.style.display = 'none';
                         }
                     } else {
                         if (type === 'internal') {
                             editInternalBtn.style.display = 'none';
                             deleteInternalBtn.style.display = 'none';
                             saveInternalSalaryBtn.style.display = 'inline-block';
+                        } else if (type === 'tax') {
+                            editTaxBtn.style.display = 'none';
+                            deleteTaxBtn.style.display = 'none';
+                            saveTaxSalaryBtn.style.display = 'inline-block';
                         }
                     }
                 })
@@ -2551,7 +2857,6 @@
                 return;
             }
             
-            // Tính toán số ngày công tối đa cho tháng
             const [year, monthNum] = month.split('-');
             const totalDays = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
             let maxWorkingDays = 0;
@@ -2572,7 +2877,6 @@
             const communicationAllowance = criterion.communicationAllowance || 0;
             const kpiStandard = criterion.kpiStandard || 0;
             
-            // Tính các khoản phụ cấp theo ngày công
             const actualInsurance = insuranceSalary * daysRatio;
             const totalMeal = mealAllowance * workDays;
             const totalTransport = transportAllowance * daysRatio;
@@ -2580,24 +2884,15 @@
             
             const insuranceDeduction = insuranceSalary * 0.105 * daysRatio;
             
-            // Tính KPI cần thiết để cân bằng với lương nội bộ
-            // Công thức: Lương hợp đồng = Lương nội bộ
-            // => (actualInsurance + totalMeal + totalTransport + totalCommunication + kpiActual - insuranceDeduction) = internalSalary
-            // => kpiActual = internalSalary - actualInsurance - totalMeal - totalTransport - totalCommunication + insuranceDeduction
-            
             const requiredKpi = internalSalary - actualInsurance - totalMeal - totalTransport - totalCommunication + insuranceDeduction;
             
-            // Tính % KPI cần đạt
             const requiredPercentage = kpiStandard > 0 ? (requiredKpi / kpiStandard) * 100 : 0;
             
-            // Giới hạn KPI trong khoảng hợp lý (0-200%)
             const safePercentage = Math.max(0, Math.min(200, requiredPercentage));
             const safeKpi = kpiStandard * (safePercentage / 100);
             
-            // Tính tổng lương hợp đồng với KPI đã điều chỉnh
             const totalSalary = actualInsurance + totalMeal + totalTransport + totalCommunication + safeKpi - insuranceDeduction;
             
-            // Cập nhật hiển thị
             taxInsuranceSalary.textContent = formatCurrency(actualInsurance);
             taxMealAllowance.textContent = formatCurrency(totalMeal);
             taxTransportAllowance.textContent = formatCurrency(totalTransport);
@@ -2608,7 +2903,6 @@
             taxOtherDeduct.textContent = formatCurrency(0);
             taxFinalSalary.textContent = formatCurrency(totalSalary);
             
-            // Lưu dữ liệu tính toán
             appState.currentSalaryData = {
                 ...appState.currentSalaryData,
                 employeeId: employeeId,
@@ -2631,7 +2925,6 @@
                 }
             };
             
-            // Kiểm tra xem đã có bản ghi lương hợp đồng chưa
             checkExistingSalary(employeeId, month, 'tax');
         }
         
@@ -2754,7 +3047,7 @@
                         <button class="btn btn-success btn-sm" onclick="exportSalaryExcel('${record.id}')">
                             <i class="fas fa-file-excel"></i>
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteSalaryRecord('${record.id}')">
+                        <button class="btn btn-danger btn-sm" onclick="requestDeleteSalaryRecord('${record.id}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -2762,6 +3055,29 @@
                 
                 salaryRecordsBody.appendChild(row);
             });
+        }
+        
+        function deleteSalaryRecord(data) {
+            const recordId = data.id;
+            const type = data.type;
+            
+            db.collection('salary_records').doc(recordId).delete()
+                .then(() => {
+                    alert('Đã xóa bảng lương thành công!');
+                    
+                    // Reset salary fields if the deleted record is the current one
+                    if (appState.currentSalaryData && appState.currentSalaryData.recordId === recordId) {
+                        resetSalaryFields();
+                    }
+                    
+                    if (type === 'record') {
+                        loadSalaryRecords();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting salary record:', error);
+                    alert('Có lỗi xảy ra khi xóa bảng lương');
+                });
         }
         
         function viewSalaryDetail(recordId) {
@@ -2799,19 +3115,13 @@
             const record = appState.salaryRecords.find(r => r.id === recordId);
             if (!record) return;
             
-            // Tạo workbook
             const wb = XLSX.utils.book_new();
             
-            // Tạo dữ liệu cho sheet
             const monthFormatted = record.month ? 
                 `Tháng ${new Date(record.month + '-01').getMonth() + 1}/${new Date(record.month + '-01').getFullYear()}` : 'N/A';
             
-            // Tiêu đề
-            const title = `BẢNG THU NHẬP THÁNG ${monthFormatted}`;
-            
-            // Tạo dữ liệu Excel
             const data = [
-                [title],
+                [`BẢNG THU NHẬP THÁNG ${monthFormatted}`],
                 [''],
                 [`Nhân viên: ${record.employeeName || 'N/A'}`],
                 [`Tháng lương: ${monthFormatted}`],
@@ -2844,7 +3154,6 @@
                 );
             }
             
-            // Thêm phần ký
             data.push(
                 [''],
                 ['', '', 'Người nhận lương', 'Kế toán trưởng'],
@@ -2852,52 +3161,226 @@
                 ['', '', record.employeeName || '', 'Trần Thị B']
             );
             
-            // Tạo worksheet
             const ws = XLSX.utils.aoa_to_sheet(data);
             
-            // Đặt chiều rộng cột
             const wscols = [
-                {wch: 5},  // STT
-                {wch: 25}, // Nội dung
-                {wch: 20}, // Số tiền
-                {wch: 15}  // Ghi chú
+                {wch: 5},
+                {wch: 25},
+                {wch: 20},
+                {wch: 15}
             ];
             ws['!cols'] = wscols;
             
-            // Merge cells cho tiêu đề
             ws['!merges'] = [
                 XLSX.utils.decode_range("A1:D1")
             ];
             
-            // Thêm worksheet vào workbook
             XLSX.utils.book_append_sheet(wb, ws, "Bảng lương");
             
-            // Xuất file
             const safeName = record.employeeName.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').replace(/\s+/g, '_');
             const fileName = `Bang_luong_${safeName}_${record.month}_${record.type}.xlsx`;
             XLSX.writeFile(wb, fileName);
         }
         
-        function deleteSalaryRecord(recordId) {
-            if (!confirm('Bạn có chắc chắn muốn xóa bảng lương này?')) return;
+        // Insurance Statistics Functions
+        function loadInsuranceData() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            insuranceMonth.value = `${year}-${month}`;
+        }
+        
+        function calculateInsurance() {
+            const month = insuranceMonth.value;
             
-            db.collection('salary_records').doc(recordId).delete()
-                .then(() => {
-                    alert('Đã xóa bảng lương thành công!');
-                    loadSalaryRecords();
+            if (!month) {
+                alert('Vui lòng chọn tháng để tính bảo hiểm');
+                return;
+            }
+            
+            insuranceLoading.style.display = 'block';
+            insuranceTable.style.display = 'none';
+            insuranceSummary.style.display = 'none';
+            
+            // Get all salary records for the selected month
+            db.collection('salary_records')
+                .where('month', '==', month)
+                .where('type', '==', 'tax')
+                .get()
+                .then(snapshot => {
+                    const records = [];
+                    snapshot.forEach(doc => {
+                        records.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    });
+                    
+                    if (records.length === 0) {
+                        insuranceLoading.innerHTML = `
+                            <div style="text-align: center; padding: 40px;">
+                                <i class="fas fa-shield-alt" style="font-size: 48px; color: #ddd;"></i>
+                                <p>Không có dữ liệu lương hợp đồng cho tháng ${month}</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    renderInsuranceDetails(records);
+                    insuranceLoading.style.display = 'none';
+                    insuranceDetails.style.display = 'block';
+                    insuranceTable.style.display = 'table';
+                    insuranceSummary.style.display = 'block';
                 })
                 .catch(error => {
-                    console.error('Error deleting salary record:', error);
-                    alert('Có lỗi xảy ra khi xóa bảng lương');
+                    console.error('Error loading insurance data:', error);
+                    insuranceLoading.innerHTML = '<p style="color: red;">Lỗi tải dữ liệu</p>';
                 });
         }
         
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND',
-                minimumFractionDigits: 0
-            }).format(amount);
+        function renderInsuranceDetails(records) {
+            insuranceBody.innerHTML = '';
+            
+            let totalInsuranceSalary = 0;
+            let totalEmployeeInsurance = 0;
+            let totalCompanyInsurance = 0;
+            let totalInsuranceToPay = 0;
+            
+            const monthFormatted = `Tháng ${new Date(insuranceMonth.value + '-01').getMonth() + 1}/${new Date(insuranceMonth.value + '-01').getFullYear()}`;
+            summaryMonth.textContent = monthFormatted;
+            
+            records.forEach((record, index) => {
+                const row = document.createElement('tr');
+                
+                // Calculate insurance amounts
+                const insuranceSalary = record.data?.insuranceSalary || 0;
+                const daysRatio = record.workDays > 0 ? record.workDays / getWorkingDaysInMonth(insuranceMonth.value) : 0;
+                const actualInsurance = insuranceSalary * daysRatio;
+                
+                const employeeInsurance = actualInsurance * 0.105; // 10.5% người lao động
+                const companyInsurance = actualInsurance * 0.215; // 21.5% công ty
+                const totalInsurance = employeeInsurance + companyInsurance;
+                
+                totalInsuranceSalary += actualInsurance;
+                totalEmployeeInsurance += employeeInsurance;
+                totalCompanyInsurance += companyInsurance;
+                totalInsuranceToPay += totalInsurance;
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${record.employeeName || 'N/A'}</td>
+                    <td>${formatCurrency(actualInsurance)}</td>
+                    <td>${formatCurrency(employeeInsurance)}</td>
+                    <td>${formatCurrency(companyInsurance)}</td>
+                    <td>${formatCurrency(totalInsurance)}</td>
+                    <td>${record.workDays || 0} ngày</td>
+                `;
+                
+                insuranceBody.appendChild(row);
+            });
+            
+            // Update summary
+            totalInsuranceSalary.textContent = formatCurrency(totalInsuranceSalary);
+            totalCompanyInsurance.textContent = formatCurrency(totalCompanyInsurance);
+        }
+        
+        function getWorkingDaysInMonth(month) {
+            const [year, monthNum] = month.split('-');
+            const totalDays = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+            let workingDays = 0;
+            
+            for (let day = 1; day <= totalDays; day++) {
+                const date = new Date(parseInt(year), parseInt(monthNum) - 1, day);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    workingDays++;
+                }
+            }
+            
+            return workingDays;
+        }
+        
+        function exportInsuranceExcel() {
+            const month = insuranceMonth.value;
+            if (!month) {
+                alert('Vui lòng tính bảo hiểm trước khi xuất file');
+                return;
+            }
+            
+            const monthFormatted = `Tháng ${new Date(month + '-01').getMonth() + 1}/${new Date(month + '-01').getFullYear()}`;
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            
+            // Title and summary
+            const data = [
+                [`BẢNG ĐÓNG BẢO HIỂM THÁNG ${monthFormatted}`],
+                [''],
+                [`Tháng: ${monthFormatted}`],
+                [`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}`],
+                [''],
+                ['STT', 'Nhân viên', 'Lương khai BH', 'BH người lao động (10.5%)', 'BH công ty (21.5%)', 'Tổng BH phải nộp', 'Ngày công']
+            ];
+            
+            // Add employee rows
+            const rows = insuranceBody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const cells = row.querySelectorAll('td');
+                data.push([
+                    cells[0].textContent,
+                    cells[1].textContent,
+                    cells[2].textContent,
+                    cells[3].textContent,
+                    cells[4].textContent,
+                    cells[5].textContent,
+                    cells[6].textContent
+                ]);
+            });
+            
+            // Add totals row
+            data.push([
+                '',
+                'TỔNG CỘNG',
+                totalInsuranceSalary.textContent,
+                '', // Employee insurance total not calculated separately
+                totalCompanyInsurance.textContent,
+                '', // Total insurance to pay
+                ''
+            ]);
+            
+            // Add approval section
+            data.push(
+                [''],
+                ['', '', '', 'Người lập', 'Kế toán trưởng', 'Giám đốc'],
+                ['', '', '', '(Ký, ghi rõ họ tên)', '(Ký, ghi rõ họ tên)', '(Ký, ghi rõ họ tên)']
+            );
+            
+            // Create worksheet
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Set column widths
+            const wscols = [
+                {wch: 5},
+                {wch: 25},
+                {wch: 20},
+                {wch: 20},
+                {wch: 20},
+                {wch: 20},
+                {wch: 10}
+            ];
+            ws['!cols'] = wscols;
+            
+            // Merge title cells
+            ws['!merges'] = [
+                XLSX.utils.decode_range("A1:G1")
+            ];
+            
+            // Add worksheet to workbook
+            XLSX.utils.book_append_sheet(wb, ws, "Bảng BH");
+            
+            // Export file
+            const fileName = `Bang_bao_hiem_${month}.xlsx`;
+            XLSX.writeFile(wb, fileName);
         }
         
         // Initialize app
@@ -2910,6 +3393,9 @@
             }
             if (event.target === editCriteriaModal) {
                 closeCriteriaModal();
+            }
+            if (event.target === passwordModal) {
+                closePasswordModal();
             }
         };
     </script>
