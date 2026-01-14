@@ -6,7 +6,7 @@
     <title>HR Salary Pro - Quản Lý Lương Chuyên Nghiệp</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SheetJS for Excel Export -->
@@ -243,8 +243,6 @@
             border-radius: 6px;
             font-size: 14px;
             transition: border-color 0.3s;
-            text-align: right;
-            font-family: monospace;
         }
         
         .form-control:focus {
@@ -256,6 +254,8 @@
             background-color: #f9f9f9;
             font-weight: 600;
             color: #2c3e50;
+            text-align: right;
+            font-family: monospace;
         }
         
         .btn {
@@ -570,6 +570,36 @@
             animation: pulse 1.5s infinite;
         }
         
+        /* Database Status */
+        .db-status {
+            background: #e8f4fc;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .db-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .db-indicator.connected {
+            background: var(--success-color);
+        }
+        
+        .db-indicator.connecting {
+            background: var(--warning-color);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .db-indicator.disconnected {
+            background: var(--danger-color);
+        }
+        
         /* Smart Features */
         .smart-comparison {
             background: #f8f9fa;
@@ -719,6 +749,36 @@
             padding-top: 15px;
         }
         
+        /* KPI Adjustment Section */
+        .tax-adjustment-info {
+            background: #fff3cd;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .tax-adjustment-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .tax-adjustment-row .percentage {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        /* Leave Days Info */
+        .leave-days-info {
+            background: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
         @keyframes pulse {
             0% { opacity: 0.5; }
             50% { opacity: 1; }
@@ -797,7 +857,7 @@
                 <i class="fas fa-exclamation-circle"></i> Mật khẩu không đúng
             </div>
             <div class="mt-20">
-                <p><strong>Mật khẩu:</strong> cấp quy</p>
+                <p><strong>Mật khẩu:</strong> ketoanhoai2026</p>
             </div>
         </div>
     </div>
@@ -814,6 +874,10 @@
                 <div class="sync-status" id="syncStatus">
                     <div class="sync-indicator synced" id="syncIndicator"></div>
                     <span id="syncText">Đã đồng bộ</span>
+                </div>
+                <div class="db-status" id="dbStatus" style="display: none;">
+                    <div class="db-indicator connected" id="dbIndicator"></div>
+                    <span id="dbText">Kết nối Database</span>
                 </div>
             </div>
             <div class="header-right">
@@ -989,6 +1053,14 @@
                                 <label class="form-label">Phụ cấp liên lạc/tháng (VNĐ)</label>
                                 <input type="text" id="criteriaCommunicationAllowance" class="form-control currency" placeholder="0">
                             </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Số ngày nghỉ phép (tháng)</label>
+                                <input type="number" id="criteriaLeaveDays" class="form-control" value="0" min="0" max="31">
+                                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                    Số ngày nghỉ phép có lương trong tháng
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="text-right">
@@ -1057,6 +1129,10 @@
                                         <span>Phụ cấp chức vụ:</span>
                                         <span id="internalAllowanceText">0 VNĐ</span>
                                     </div>
+                                    <div class="employee-detail">
+                                        <span>Ngày nghỉ phép:</span>
+                                        <span id="internalLeaveDaysText">0 ngày</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1080,6 +1156,10 @@
                                 <span id="enteredWorkDays">0 ngày</span>
                             </div>
                             <div class="days-info-row">
+                                <span>Ngày nghỉ phép:</span>
+                                <span id="internalLeaveDaysDisplay">0 ngày</span>
+                            </div>
+                            <div class="days-info-row">
                                 <span>Tỷ lệ ngày công:</span>
                                 <span id="workDaysRatio">0/26 (0%)</span>
                             </div>
@@ -1097,6 +1177,9 @@
                             <div class="form-group">
                                 <label class="form-label">Tỷ lệ KPI đạt được (%) *</label>
                                 <input type="number" id="internalKpiPercentage" class="form-control" value="0" min="0" max="100">
+                                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                    KPI thực nhận: <span id="internalKpiActualText">0 VNĐ</span>
+                                </div>
                             </div>
                             
                             <div class="form-group">
@@ -1110,6 +1193,24 @@
                             <div class="form-group">
                                 <label class="form-label">Các khoản trừ khác (VNĐ)</label>
                                 <input type="text" id="internalOtherDeductions" class="form-control currency" placeholder="0">
+                            </div>
+                        </div>
+                        
+                        <div class="leave-days-info" id="leaveDaysInfo" style="display: none;">
+                            <div class="days-info-row">
+                                <span><strong>Thông tin nghỉ phép:</strong></span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Số ngày nghỉ phép:</span>
+                                <span id="leaveDaysCount">0 ngày</span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Tiền lương nghỉ phép:</span>
+                                <span id="leaveSalaryAmount">0 VNĐ</span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Công thức tính:</span>
+                                <span>Lương cơ bản × Ngày phép / Tổng ngày công</span>
                             </div>
                         </div>
                         
@@ -1128,16 +1229,32 @@
                         <div class="result-box">
                             <h3 style="margin-bottom: 20px;">Chi tiết tính toán</h3>
                             <div class="result-row">
-                                <span>Tổng thu nhập trước trừ:</span>
-                                <span id="internalTotalBefore">0 VNĐ</span>
+                                <span>Lương cơ bản:</span>
+                                <span id="internalBasicSalaryDisplay">0 VNĐ</span>
                             </div>
                             <div class="result-row">
-                                <span>Tỷ lệ ngày công:</span>
-                                <span id="internalDaysRatio">0/26 (0%)</span>
+                                <span>Lương theo ngày công:</span>
+                                <span id="internalBasicByDays">0 VNĐ</span>
                             </div>
                             <div class="result-row">
-                                <span>Thu nhập theo ngày công:</span>
-                                <span id="internalByDays">0 VNĐ</span>
+                                <span>Phụ cấp theo ngày công:</span>
+                                <span id="internalAllowanceByDays">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>KPI thực nhận:</span>
+                                <span id="internalKpiActualDisplay">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>KPI theo ngày công:</span>
+                                <span id="internalKpiByDays">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Điều chỉnh KPI:</span>
+                                <span id="internalKpiAdjustDisplay">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Tiền lương nghỉ phép:</span>
+                                <span id="internalLeaveSalary">0 VNĐ</span>
                             </div>
                             <div class="result-row">
                                 <span>Trừ BH người lao động (10.5%):</span>
@@ -1213,6 +1330,40 @@
                         </div>
                     </div>
                     
+                    <!-- KPI Adjustment Section -->
+                    <div class="form-section" id="taxAdjustmentSection" style="display: none;">
+                        <h2 class="section-title">
+                            <i class="fas fa-adjust"></i> Điều chỉnh thu nhập KPI
+                        </h2>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Thông tin:</strong> Tỷ lệ điều chỉnh = (KPI bảng bảo hiểm - KPI chuẩn) / KPI chuẩn × 100%
+                            </div>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Tỷ lệ điều chỉnh KPI (%)</label>
+                                <input type="number" id="taxKpiAdjustPercentage" class="form-control" value="0" min="-100" max="200">
+                                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                    Dương: tăng %, Âm: giảm % so với KPI chuẩn. Tối đa: 200%
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">KPI chuẩn:</label>
+                                <input type="text" id="taxKpiStandard" class="form-control currency" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">KPI sau điều chỉnh (tự động):</label>
+                                <input type="text" id="taxKpiAfterAdjust" class="form-control currency" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="form-section">
                         <h2 class="section-title">
                             <i class="fas fa-file-contract"></i> Kết quả tính lương hợp đồng
@@ -1225,11 +1376,33 @@
                             </div>
                         </div>
                         
+                        <div class="leave-days-info" id="taxLeaveDaysInfo" style="display: none;">
+                            <div class="days-info-row">
+                                <span><strong>Thông tin nghỉ phép (bảng BH):</strong></span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Số ngày nghỉ phép:</span>
+                                <span id="taxLeaveDaysCount">0 ngày</span>
+                            </div>
+                            <div class="days-info-row">
+                                <span>Tiền lương nghỉ phép (BH):</span>
+                                <span id="taxLeaveSalaryAmount">0 VNĐ</span>
+                            </div>
+                        </div>
+                        
                         <div class="result-box">
                             <h3 style="margin-bottom: 20px;">Chi tiết tính toán tự động</h3>
                             <div class="result-row">
                                 <span>Lương tính bảo hiểm:</span>
                                 <span id="taxInsuranceSalary">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Lương BH theo ngày công:</span>
+                                <span id="taxInsuranceByDays">0 VNĐ</span>
+                            </div>
+                            <div class="result-row">
+                                <span>Tiền lương nghỉ phép:</span>
+                                <span id="taxLeaveSalary">0 VNĐ</span>
                             </div>
                             <div class="result-row">
                                 <span>Phụ cấp cơm trưa:</span>
@@ -1319,6 +1492,7 @@
                                     <th>Nhân viên</th>
                                     <th>Tháng lương</th>
                                     <th>Ngày công</th>
+                                    <th>Ngày phép</th>
                                     <th>Lương nội bộ</th>
                                     <th>Lương hợp đồng</th>
                                     <th>Ngày lập</th>
@@ -1344,6 +1518,7 @@
                             <i class="fas fa-info-circle"></i>
                             <div>
                                 <strong>Thông tin:</strong> Tổng số tiền đóng bảo hiểm công ty = 21.5% × Tổng lương khai bảo hiểm của tất cả nhân viên trong tháng.
+                                <br>BH người lao động: 10.5%, BH công ty: 21.5%
                             </div>
                         </div>
                         
@@ -1373,12 +1548,16 @@
                                 <span id="totalInsuranceSalary">0 VNĐ</span>
                             </div>
                             <div class="summary-row">
-                                <span>Tỷ lệ đóng BH công ty:</span>
-                                <span>21.5%</span>
+                                <span>BH người lao động (10.5%):</span>
+                                <span id="totalEmployeeInsurance">0 VNĐ</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>BH công ty (21.5%):</span>
+                                <span id="totalCompanyInsurance">0 VNĐ</span>
                             </div>
                             <div class="summary-row total">
-                                <span>Tổng tiền đóng BH công ty:</span>
-                                <span id="totalCompanyInsurance">0 VNĐ</span>
+                                <span>Tổng BH phải nộp:</span>
+                                <span id="totalInsuranceToPay">0 VNĐ</span>
                             </div>
                         </div>
                         
@@ -1399,10 +1578,10 @@
                                         <th>STT</th>
                                         <th>Nhân viên</th>
                                         <th>Lương khai BH</th>
+                                        <th>Ngày công</th>
                                         <th>BH người lao động (10.5%)</th>
                                         <th>BH công ty (21.5%)</th>
                                         <th>Tổng BH phải nộp</th>
-                                        <th>Ngày công</th>
                                     </tr>
                                 </thead>
                                 <tbody id="insuranceBody">
@@ -1516,6 +1695,11 @@
                         <input type="text" id="editCriteriaCommunicationAllowance" class="form-control currency" placeholder="0">
                     </div>
                     
+                    <div class="form-group">
+                        <label class="form-label">Số ngày nghỉ phép (tháng)</label>
+                        <input type="number" id="editCriteriaLeaveDays" class="form-control" value="0" min="0" max="31">
+                    </div>
+                    
                     <div class="d-flex justify-between mt-20">
                         <button class="btn btn-danger" onclick="requestDeleteCriteria()">
                             <i class="fas fa-trash"></i> Xóa
@@ -1549,26 +1733,27 @@
 
     <!-- Firebase Configuration -->
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXAczKrk_dvz99pvhJlVw3qVllnejRCPc",
-            authDomain: "luong-a7cc4.firebaseapp.com",
-            projectId: "luong-a7cc4",
-            storageBucket: "luong-a7cc4.firebasestorage.app",
-            messagingSenderId: "540704921176",
-            appId: "1:540704921176:web:2b926908b7cc52e241dc2d",
-            measurementId: "G-L1K0SH23NP"
-        };
+        // Firebase configuration - Sử dụng Realtime Database
+      const firebaseConfig = {
+  apiKey: "AIzaSyCOZaONEkPrOWINRAxME-ITKG04TEqLO5g",
+  authDomain: "thuong-533b0.firebaseapp.com",
+  databaseURL: "https://thuong-533b0-default-rtdb.firebaseio.com",
+  projectId: "thuong-533b0",
+  storageBucket: "thuong-533b0.firebasestorage.app",
+  messagingSenderId: "528257010592",
+  appId: "1:528257010592:web:0b6ed0612278843366b2c5",
+  measurementId: "G-LLTXTPP6WY"
+};
         
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const database = firebase.database();
         
         // Application state
         const appState = {
-            employees: [],
-            salaryCriteria: [],
-            salaryRecords: [],
+            employees: {},
+            salaryCriteria: {},
+            salaryRecords: {},
             currentEmployeeId: null,
             currentCriteriaId: null,
             currentSalaryData: null,
@@ -1576,7 +1761,8 @@
             lastInternalSalary: 0,
             autoSyncData: null,
             pendingAction: null,
-            pendingActionData: null
+            pendingActionData: null,
+            dbConnected: false
         };
         
         // Password for app access
@@ -1591,6 +1777,9 @@
         const loginBtn = document.getElementById('loginBtn');
         const loginError = document.getElementById('loginError');
         const logoutBtn = document.getElementById('logoutBtn');
+        const dbStatus = document.getElementById('dbStatus');
+        const dbIndicator = document.getElementById('dbIndicator');
+        const dbText = document.getElementById('dbText');
         
         // Employee management
         const saveEmployeeBtn = document.getElementById('saveEmployeeBtn');
@@ -1617,6 +1806,7 @@
         const criteriaMealAllowance = document.getElementById('criteriaMealAllowance');
         const criteriaTransportAllowance = document.getElementById('criteriaTransportAllowance');
         const criteriaCommunicationAllowance = document.getElementById('criteriaCommunicationAllowance');
+        const criteriaLeaveDays = document.getElementById('criteriaLeaveDays');
         const saveCriteriaBtn = document.getElementById('saveCriteriaBtn');
         const criteriaList = document.getElementById('criteriaList');
         const criteriaLoading = document.getElementById('criteriaLoading');
@@ -1631,22 +1821,35 @@
         const internalMonthText = document.getElementById('internalMonthText');
         const internalBasicSalaryText = document.getElementById('internalBasicSalaryText');
         const internalAllowanceText = document.getElementById('internalAllowanceText');
+        const internalLeaveDaysText = document.getElementById('internalLeaveDaysText');
         
         const currentMonthText = document.getElementById('currentMonthText');
         const totalWorkingDays = document.getElementById('totalWorkingDays');
         const enteredWorkDays = document.getElementById('enteredWorkDays');
+        const internalLeaveDaysDisplay = document.getElementById('internalLeaveDaysDisplay');
         const workDaysRatio = document.getElementById('workDaysRatio');
         const maxWorkDays = document.getElementById('maxWorkDays');
         
         const internalWorkDays = document.getElementById('internalWorkDays');
         const internalKpiPercentage = document.getElementById('internalKpiPercentage');
+        const internalKpiActualText = document.getElementById('internalKpiActualText');
         const internalKpiAdjustment = document.getElementById('internalKpiAdjustment');
         const internalOtherDeductions = document.getElementById('internalOtherDeductions');
         const calculateInternalBtn = document.getElementById('calculateInternalBtn');
         
-        const internalTotalBefore = document.getElementById('internalTotalBefore');
-        const internalDaysRatio = document.getElementById('internalDaysRatio');
-        const internalByDays = document.getElementById('internalByDays');
+        // Leave days info
+        const leaveDaysInfo = document.getElementById('leaveDaysInfo');
+        const leaveDaysCount = document.getElementById('leaveDaysCount');
+        const leaveSalaryAmount = document.getElementById('leaveSalaryAmount');
+        
+        // New display elements for detailed calculation
+        const internalBasicSalaryDisplay = document.getElementById('internalBasicSalaryDisplay');
+        const internalBasicByDays = document.getElementById('internalBasicByDays');
+        const internalAllowanceByDays = document.getElementById('internalAllowanceByDays');
+        const internalKpiActualDisplay = document.getElementById('internalKpiActualDisplay');
+        const internalKpiByDays = document.getElementById('internalKpiByDays');
+        const internalKpiAdjustDisplay = document.getElementById('internalKpiAdjustDisplay');
+        const internalLeaveSalary = document.getElementById('internalLeaveSalary');
         const internalBhDeduction = document.getElementById('internalBhDeduction');
         const internalOtherDeduct = document.getElementById('internalOtherDeduct');
         const internalFinalSalary = document.getElementById('internalFinalSalary');
@@ -1664,7 +1867,20 @@
         const autoSyncInternalSalary = document.getElementById('autoSyncInternalSalary');
         const autoCalculateNotice = document.getElementById('autoCalculateNotice');
         
+        // KPI Adjustment Section
+        const taxAdjustmentSection = document.getElementById('taxAdjustmentSection');
+        const taxKpiAdjustPercentage = document.getElementById('taxKpiAdjustPercentage');
+        const taxKpiStandard = document.getElementById('taxKpiStandard');
+        const taxKpiAfterAdjust = document.getElementById('taxKpiAfterAdjust');
+        
+        // Tax leave days info
+        const taxLeaveDaysInfo = document.getElementById('taxLeaveDaysInfo');
+        const taxLeaveDaysCount = document.getElementById('taxLeaveDaysCount');
+        const taxLeaveSalaryAmount = document.getElementById('taxLeaveSalaryAmount');
+        
         const taxInsuranceSalary = document.getElementById('taxInsuranceSalary');
+        const taxInsuranceByDays = document.getElementById('taxInsuranceByDays');
+        const taxLeaveSalary = document.getElementById('taxLeaveSalary');
         const taxMealAllowance = document.getElementById('taxMealAllowance');
         const taxTransportAllowance = document.getElementById('taxTransportAllowance');
         const taxCommunicationAllowance = document.getElementById('taxCommunicationAllowance');
@@ -1692,7 +1908,9 @@
         const insuranceSummary = document.getElementById('insuranceSummary');
         const summaryMonth = document.getElementById('summaryMonth');
         const totalInsuranceSalary = document.getElementById('totalInsuranceSalary');
+        const totalEmployeeInsurance = document.getElementById('totalEmployeeInsurance');
         const totalCompanyInsurance = document.getElementById('totalCompanyInsurance');
+        const totalInsuranceToPay = document.getElementById('totalInsuranceToPay');
         const insuranceDetails = document.getElementById('insuranceDetails');
         const insuranceLoading = document.getElementById('insuranceLoading');
         const insuranceTable = document.getElementById('insuranceTable');
@@ -1722,6 +1940,7 @@
         const editCriteriaMealAllowance = document.getElementById('editCriteriaMealAllowance');
         const editCriteriaTransportAllowance = document.getElementById('editCriteriaTransportAllowance');
         const editCriteriaCommunicationAllowance = document.getElementById('editCriteriaCommunicationAllowance');
+        const editCriteriaLeaveDays = document.getElementById('editCriteriaLeaveDays');
         
         // Password modal
         const passwordModal = document.getElementById('passwordModal');
@@ -1752,6 +1971,18 @@
         
         function getInitials(name) {
             return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        }
+        
+        function updateDBStatus(status, text) {
+            dbIndicator.className = 'db-indicator ' + status;
+            dbText.textContent = text;
+            dbStatus.style.display = 'flex';
+            appState.dbConnected = status === 'connected';
+        }
+        
+        function updateSyncStatus(status, text) {
+            syncIndicator.className = 'sync-indicator ' + status;
+            syncText.textContent = text;
         }
         
         // Initialize app
@@ -1833,7 +2064,9 @@
                     document.getElementById(tabId).classList.add('active');
                     
                     // Load data for active tab
-                    if (tabId === 'tab2') {
+                    if (tabId === 'tab1') {
+                        loadEmployees();
+                    } else if (tabId === 'tab2') {
                         loadSalaryCriteria();
                     } else if (tabId === 'tab5') {
                         loadSalaryRecords();
@@ -1858,12 +2091,13 @@
             internalEmployee.addEventListener('change', loadInternalData);
             internalMonth.addEventListener('change', updateInternalWorkingDays);
             internalWorkDays.addEventListener('input', updateInternalDisplay);
+            internalKpiPercentage.addEventListener('input', updateKpiActualDisplay);
             calculateInternalBtn.addEventListener('click', calculateInternalSalary);
             saveInternalSalaryBtn.addEventListener('click', saveInternalSalary);
             deleteInternalBtn.addEventListener('click', () => requestDeleteSalary('internal'));
             
             // Auto-calculate for Tab 3
-            [internalKpiPercentage, internalKpiAdjustment, internalOtherDeductions].forEach(input => {
+            [internalKpiAdjustment, internalOtherDeductions].forEach(input => {
                 input.addEventListener('input', calculateInternalSalary);
             });
             
@@ -1877,175 +2111,56 @@
             // Insurance statistics
             calculateInsuranceBtn.addEventListener('click', calculateInsurance);
             exportInsuranceBtn.addEventListener('click', exportInsuranceExcel);
-        }
-        
-        // Password verification functions - SỬA LỖI Ở ĐÂY
-        function openPasswordModal(action, data = null) {
-            appState.pendingAction = action;
-            appState.pendingActionData = data;
-            verifyPasswordInput.value = '';
-            passwordModal.style.display = 'flex';
-        }
-        
-        function closePasswordModal() {
-            passwordModal.style.display = 'none';
-            appState.pendingAction = null;
-            appState.pendingActionData = null;
-        }
-        
-        function verifyPassword() {
-            const password = verifyPasswordInput.value;
             
-            if (password === APP_PASSWORD) {
-                closePasswordModal();
-                
-                // Execute pending action
-                switch(appState.pendingAction) {
-                    case 'deleteCriteria':
-                        deleteCriterion(appState.pendingActionData);
-                        break;
-                    case 'deleteSalary':
-                        deleteSalaryRecord(appState.pendingActionData);
-                        break;
-                    case 'deleteEmployee':
-                        deleteEmployee(appState.pendingActionData);
-                        break;
-                    case 'deleteSalaryRecord':
-                        deleteSalaryRecord(appState.pendingActionData);
-                        break;
-                }
-            } else {
-                alert('Mật khẩu không đúng!');
-                verifyPasswordInput.value = '';
+            // KPI adjustment percentage
+            if (taxKpiAdjustPercentage) {
+                taxKpiAdjustPercentage.addEventListener('input', handleKpiAdjustment);
             }
         }
         
-        function requestDeleteCriteria() {
-            if (!appState.currentCriteriaId) return;
-            openPasswordModal('deleteCriteria', appState.currentCriteriaId);
-        }
-        
-        // SỬA LỖI: Thêm hàm requestDeleteCriteria cho nút xóa trong danh sách tiêu chí
-        function requestDeleteCriteriaFromList(criteriaId) {
-            openPasswordModal('deleteCriteria', criteriaId);
-        }
-        
-        function requestDeleteSalary(type) {
-            if (!appState.currentSalaryData || !appState.currentSalaryData.recordId) return;
-            openPasswordModal('deleteSalary', { id: appState.currentSalaryData.recordId, type: type });
-        }
-        
-        function requestDeleteEmployee(employeeId) {
-            openPasswordModal('deleteEmployee', employeeId);
-        }
-        
-        function requestDeleteSalaryRecord(recordId) {
-            openPasswordModal('deleteSalaryRecord', { id: recordId, type: 'record' });
-        }
-        
-        // TỰ ĐỘNG ĐỒNG BỘ TỪ TAB 3
-        function autoSyncFromTab3() {
-            if (appState.currentSalaryData && appState.currentSalaryData.internal) {
-                autoSyncIndicator.style.display = 'flex';
-                
-                appState.autoSyncData = {
-                    employeeId: appState.currentSalaryData.employeeId,
-                    month: appState.currentSalaryData.month,
-                    workDays: appState.currentSalaryData.workDays,
-                    internalSalary: appState.currentSalaryData.internal.finalSalary,
-                    internalData: appState.currentSalaryData.internal
-                };
-                
-                const employee = appState.employees.find(emp => emp.id === appState.currentSalaryData.employeeId);
-                if (employee) {
-                    autoSyncEmployee.textContent = employee.name;
-                }
-                
-                const monthFormatted = appState.currentSalaryData.month ? 
-                    `Tháng ${new Date(appState.currentSalaryData.month + '-01').getMonth() + 1}/${new Date(appState.currentSalaryData.month + '-01').getFullYear()}` : 'N/A';
-                autoSyncMonth.textContent = monthFormatted;
-                autoSyncWorkDays.textContent = `${appState.currentSalaryData.workDays} ngày`;
-                autoSyncInternalSalary.textContent = formatCurrency(appState.currentSalaryData.internal.finalSalary);
-                
-                smartComparisonSection.style.display = 'block';
-                autoCalculateNotice.style.display = 'flex';
-                
-                setTimeout(() => {
-                    autoCalculateTaxSalary();
-                    autoSyncIndicator.style.display = 'none';
-                }, 1000);
-            } else {
-                smartComparisonSection.style.display = 'none';
-                autoSyncIndicator.style.display = 'none';
-                autoCalculateNotice.style.display = 'none';
-            }
-        }
-        
-        function handleLogin() {
-            const password = passwordInput.value;
-            
-            if (password === APP_PASSWORD) {
-                // Set login flag
-                localStorage.setItem('hr_salary_pro_logged_in', 'true');
-                
-                // Clear password field
-                passwordInput.value = '';
-                
-                // Show main app
-                showMainApp();
-                
-                // Initialize Firebase
-                initFirebase();
-                
-                // Hide error
-                loginError.style.display = 'none';
-            } else {
-                // Show error
-                loginError.style.display = 'block';
-                passwordInput.value = '';
-                passwordInput.focus();
-            }
-        }
-        
-        function handleLogout() {
-            // Clear login flag
-            localStorage.removeItem('hr_salary_pro_logged_in');
-            
-            // Show login screen
-            showLoginScreen();
-        }
+        // ============================================
+        // FIREBASE REALTIME DATABASE FUNCTIONS
+        // ============================================
         
         function initFirebase() {
             updateSyncStatus('syncing', 'Đang kết nối...');
-            loadEmployees();
-            loadSalaryCriteria();
-            loadSalaryRecords();
-            setupRealtimeListeners();
-        }
-        
-        function updateSyncStatus(status, text) {
-            syncIndicator.className = 'sync-indicator ' + status;
-            syncText.textContent = text;
+            
+            // Lắng nghe trạng thái kết nối database
+            database.ref('.info/connected').on('value', function(snapshot) {
+                if (snapshot.val() === true) {
+                    updateDBStatus('connected', 'Đã kết nối Database');
+                    console.log('Connected to Firebase Realtime Database');
+                    
+                    // Load dữ liệu khi kết nối thành công
+                    loadEmployees();
+                    loadSalaryCriteria();
+                    loadSalaryRecords();
+                    
+                    // Thiết lập realtime listeners
+                    setupRealtimeListeners();
+                } else {
+                    updateDBStatus('disconnected', 'Mất kết nối Database');
+                    console.log('Disconnected from Firebase Realtime Database');
+                }
+            });
         }
         
         function setupRealtimeListeners() {
             // Employees listener
-            db.collection('employees').onSnapshot(snapshot => {
+            database.ref('employees').on('value', function(snapshot) {
                 updateSyncStatus('syncing', 'Đang cập nhật...');
                 
-                appState.employees = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.active !== false) {
-                        appState.employees.push({
-                            id: doc.id,
-                            ...data
-                        });
-                    }
-                });
+                const employeesData = snapshot.val();
+                appState.employees = employeesData || {};
                 
-                updateAllEmployeeDropdowns();
-                renderEmployees();
+                // Chuyển đổi sang array
+                const employeesArray = Object.keys(appState.employees || {}).map(key => ({
+                    id: key,
+                    ...appState.employees[key]
+                })).filter(emp => emp.active !== false);
+                
+                updateAllEmployeeDropdowns(employeesArray);
+                renderEmployees(employeesArray);
                 
                 setTimeout(() => {
                     updateSyncStatus('synced', 'Đã đồng bộ');
@@ -2053,32 +2168,34 @@
             });
             
             // Salary criteria listener
-            db.collection('salary_criteria').onSnapshot(snapshot => {
-                appState.salaryCriteria = [];
-                snapshot.forEach(doc => {
-                    appState.salaryCriteria.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
+            database.ref('salary_criteria').on('value', function(snapshot) {
+                const criteriaData = snapshot.val();
+                appState.salaryCriteria = criteriaData || {};
+                
+                // Chuyển đổi sang array
+                const criteriaArray = Object.keys(appState.salaryCriteria || {}).map(key => ({
+                    id: key,
+                    ...appState.salaryCriteria[key]
+                }));
                 
                 if (document.getElementById('tab2').classList.contains('active')) {
-                    renderSalaryCriteria();
+                    renderSalaryCriteria(criteriaArray);
                 }
             });
             
             // Salary records listener
-            db.collection('salary_records').onSnapshot(snapshot => {
-                appState.salaryRecords = [];
-                snapshot.forEach(doc => {
-                    appState.salaryRecords.push({
-                        id: doc.id,
-                        ...doc.data()
-                    });
-                });
+            database.ref('salary_records').on('value', function(snapshot) {
+                const recordsData = snapshot.val();
+                appState.salaryRecords = recordsData || {};
+                
+                // Chuyển đổi sang array
+                const recordsArray = Object.keys(appState.salaryRecords || {}).map(key => ({
+                    id: key,
+                    ...appState.salaryRecords[key]
+                }));
                 
                 if (document.getElementById('tab5').classList.contains('active')) {
-                    renderSalaryRecords();
+                    renderSalaryRecords(recordsArray);
                 }
             });
         }
@@ -2087,18 +2204,19 @@
             employeesLoading.style.display = 'block';
             employeesList.innerHTML = '';
             
-            db.collection('employees').where('active', '!=', false).get()
+            database.ref('employees').once('value')
                 .then(snapshot => {
-                    appState.employees = [];
-                    snapshot.forEach(doc => {
-                        appState.employees.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
+                    const employeesData = snapshot.val();
+                    appState.employees = employeesData || {};
                     
-                    updateAllEmployeeDropdowns();
-                    renderEmployees();
+                    // Chuyển đổi sang array
+                    const employeesArray = Object.keys(appState.employees || {}).map(key => ({
+                        id: key,
+                        ...appState.employees[key]
+                    })).filter(emp => emp.active !== false);
+                    
+                    updateAllEmployeeDropdowns(employeesArray);
+                    renderEmployees(employeesArray);
                     employeesLoading.style.display = 'none';
                 })
                 .catch(error => {
@@ -2107,7 +2225,7 @@
                 });
         }
         
-        function updateAllEmployeeDropdowns() {
+        function updateAllEmployeeDropdowns(employeesArray) {
             const dropdowns = [
                 criteriaEmployee,
                 internalEmployee,
@@ -2122,7 +2240,7 @@
                     dropdown.innerHTML = '<option value="">Tất cả nhân viên</option>';
                 }
                 
-                appState.employees.forEach(employee => {
+                employeesArray.forEach(employee => {
                     const option = document.createElement('option');
                     option.value = employee.id;
                     option.textContent = `${employee.name} - ${employee.position || 'Nhân viên'}`;
@@ -2133,10 +2251,10 @@
             });
         }
         
-        function renderEmployees() {
+        function renderEmployees(employeesArray) {
             employeesList.innerHTML = '';
             
-            if (appState.employees.length === 0) {
+            if (employeesArray.length === 0) {
                 employeesList.innerHTML = `
                     <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
                         <i class="fas fa-users" style="font-size: 48px; color: #ddd;"></i>
@@ -2146,7 +2264,7 @@
                 return;
             }
             
-            appState.employees.forEach(employee => {
+            employeesArray.forEach(employee => {
                 const card = document.createElement('div');
                 card.className = 'employee-card';
                 
@@ -2216,7 +2334,8 @@
             
             const employeeId = 'emp_' + Date.now();
             
-            db.collection('employees').doc(employeeId).set(employeeData)
+            // Lưu vào Realtime Database
+            database.ref('employees/' + employeeId).set(employeeData)
                 .then(() => {
                     alert('Đã lưu nhân viên thành công!');
                     
@@ -2240,7 +2359,7 @@
         }
         
         function openEditEmployeeModal(employeeId) {
-            const employee = appState.employees.find(emp => emp.id === employeeId);
+            const employee = appState.employees[employeeId];
             if (!employee) return;
             
             appState.currentEmployeeId = employeeId;
@@ -2273,7 +2392,7 @@
                 updatedAt: new Date().toISOString()
             };
             
-            db.collection('employees').doc(appState.currentEmployeeId).update(updatedData)
+            database.ref('employees/' + appState.currentEmployeeId).update(updatedData)
                 .then(() => {
                     alert('Đã cập nhật thông tin nhân viên!');
                     closeEmployeeModal();
@@ -2288,28 +2407,36 @@
             // Reset salary calculation fields
             resetSalaryFields();
             
-            db.collection('employees').doc(employeeId).delete()
+            database.ref('employees/' + employeeId).remove()
                 .then(() => {
-                    db.collection('salary_criteria').where('employeeId', '==', employeeId).get()
+                    // Xóa tiêu chí lương liên quan
+                    database.ref('salary_criteria').orderByChild('employeeId').equalTo(employeeId).once('value')
                         .then(snapshot => {
-                            const batch = db.batch();
-                            snapshot.forEach(doc => {
-                                batch.delete(doc.ref);
+                            const updates = {};
+                            snapshot.forEach(child => {
+                                updates[child.key] = null;
                             });
-                            return batch.commit();
+                            if (Object.keys(updates).length > 0) {
+                                return database.ref('salary_criteria').update(updates);
+                            }
+                            return Promise.resolve();
                         })
                         .then(() => {
-                            return db.collection('salary_records').where('employeeId', '==', employeeId).get();
-                        })
-                        .then(snapshot => {
-                            const batch = db.batch();
-                            snapshot.forEach(doc => {
-                                batch.delete(doc.ref);
-                            });
-                            return batch.commit();
-                        })
-                        .then(() => {
-                            alert('Đã xóa nhân viên và tất cả dữ liệu liên quan thành công!');
+                            // Xóa bảng lương liên quan
+                            database.ref('salary_records').orderByChild('employeeId').equalTo(employeeId).once('value')
+                                .then(snapshot => {
+                                    const updates = {};
+                                    snapshot.forEach(child => {
+                                        updates[child.key] = null;
+                                    });
+                                    if (Object.keys(updates).length > 0) {
+                                        return database.ref('salary_records').update(updates);
+                                    }
+                                    return Promise.resolve();
+                                })
+                                .then(() => {
+                                    alert('Đã xóa nhân viên và tất cả dữ liệu liên quan thành công!');
+                                });
                         })
                         .catch(error => {
                             console.error('Error deleting related data:', error);
@@ -2322,46 +2449,6 @@
                 });
         }
         
-        function resetSalaryFields() {
-            // Reset Tab 3 fields
-            internalWorkDays.value = 0;
-            internalKpiPercentage.value = 0;
-            internalKpiAdjustment.value = formatNumberToCurrency(0);
-            internalOtherDeductions.value = formatNumberToCurrency(0);
-            
-            // Reset Tab 3 results
-            internalTotalBefore.textContent = formatCurrency(0);
-            internalDaysRatio.textContent = '0/0 (0%)';
-            internalByDays.textContent = formatCurrency(0);
-            internalBhDeduction.textContent = formatCurrency(0);
-            internalOtherDeduct.textContent = formatCurrency(0);
-            internalFinalSalary.textContent = formatCurrency(0);
-            
-            // Reset Tab 4 results
-            taxInsuranceSalary.textContent = formatCurrency(0);
-            taxMealAllowance.textContent = formatCurrency(0);
-            taxTransportAllowance.textContent = formatCurrency(0);
-            taxCommunicationAllowance.textContent = formatCurrency(0);
-            taxKpiActual.textContent = formatCurrency(0);
-            taxBhDeduction.textContent = formatCurrency(0);
-            taxKpiAdjust.textContent = formatCurrency(0);
-            taxOtherDeduct.textContent = formatCurrency(0);
-            taxFinalSalary.textContent = formatCurrency(0);
-            
-            // Hide edit/delete buttons
-            editInternalBtn.style.display = 'none';
-            deleteInternalBtn.style.display = 'none';
-            saveInternalSalaryBtn.style.display = 'inline-block';
-            
-            editTaxBtn.style.display = 'none';
-            deleteTaxBtn.style.display = 'none';
-            saveTaxSalaryBtn.style.display = 'inline-block';
-            
-            // Clear current salary data
-            appState.currentSalaryData = null;
-            appState.autoSyncData = null;
-        }
-        
         function deleteEmployeePermanently() {
             if (!appState.currentEmployeeId) return;
             requestDeleteEmployee(appState.currentEmployeeId);
@@ -2372,17 +2459,18 @@
             criteriaLoading.style.display = 'block';
             criteriaList.innerHTML = '';
             
-            db.collection('salary_criteria').orderBy('updatedAt', 'desc').get()
+            database.ref('salary_criteria').once('value')
                 .then(snapshot => {
-                    const criteria = [];
-                    snapshot.forEach(doc => {
-                        criteria.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
+                    const criteriaData = snapshot.val();
+                    appState.salaryCriteria = criteriaData || {};
                     
-                    renderSalaryCriteria(criteria);
+                    // Chuyển đổi sang array
+                    const criteriaArray = Object.keys(appState.salaryCriteria || {}).map(key => ({
+                        id: key,
+                        ...appState.salaryCriteria[key]
+                    }));
+                    
+                    renderSalaryCriteria(criteriaArray);
                     criteriaLoading.style.display = 'none';
                 })
                 .catch(error => {
@@ -2391,10 +2479,10 @@
                 });
         }
         
-        function renderSalaryCriteria(criteria = appState.salaryCriteria) {
+        function renderSalaryCriteria(criteriaArray) {
             criteriaList.innerHTML = '';
             
-            if (criteria.length === 0) {
+            if (criteriaArray.length === 0) {
                 criteriaList.innerHTML = `
                     <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
                         <i class="fas fa-list" style="font-size: 48px; color: #ddd;"></i>
@@ -2407,14 +2495,19 @@
                 return;
             }
             
-            criteria.forEach(criterion => {
-                const employee = appState.employees.find(emp => emp.id === criterion.employeeId);
+            // Chuyển đổi employees object sang array
+            const employeesArray = Object.keys(appState.employees || {}).map(key => ({
+                id: key,
+                ...appState.employees[key]
+            })).filter(emp => emp.active !== false);
+            
+            criteriaArray.forEach(criterion => {
+                const employee = employeesArray.find(emp => emp.id === criterion.employeeId);
                 if (!employee) return;
                 
                 const card = document.createElement('div');
                 card.className = 'criteria-card';
                 
-                // SỬA LỖI: Sửa đúng hàm gọi khi click nút xóa
                 card.innerHTML = `
                     <div class="criteria-header">
                         <div>
@@ -2447,6 +2540,10 @@
                             <span>Lương tính BH:</span>
                             <span>${criterion.insuranceSalary ? formatCurrency(criterion.insuranceSalary) : 'Chưa có số liệu'}</span>
                         </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>Ngày nghỉ phép:</span>
+                            <span>${criterion.leaveDays || 0} ngày</span>
+                        </div>
                     </div>
                 `;
                 
@@ -2459,12 +2556,16 @@
             
             if (!employeeId) return;
             
-            db.collection('salary_criteria')
-                .where('employeeId', '==', employeeId)
-                .get()
+            database.ref('salary_criteria')
+                .orderByChild('employeeId')
+                .equalTo(employeeId)
+                .once('value')
                 .then(snapshot => {
-                    if (!snapshot.empty) {
-                        const criterion = snapshot.docs[0].data();
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const key = Object.keys(data)[0];
+                        const criterion = data[key];
+                        
                         criteriaBasicSalary.value = formatNumberToCurrency(criterion.basicSalary || 0);
                         criteriaAllowance.value = formatNumberToCurrency(criterion.allowance || 0);
                         criteriaKpiStandard.value = formatNumberToCurrency(criterion.kpiStandard || 0);
@@ -2472,8 +2573,9 @@
                         criteriaMealAllowance.value = formatNumberToCurrency(criterion.mealAllowance || 0);
                         criteriaTransportAllowance.value = formatNumberToCurrency(criterion.transportAllowance || 0);
                         criteriaCommunicationAllowance.value = formatNumberToCurrency(criterion.communicationAllowance || 0);
+                        criteriaLeaveDays.value = criterion.leaveDays || 0;
                         
-                        appState.currentCriteriaId = snapshot.docs[0].id;
+                        appState.currentCriteriaId = key;
                     } else {
                         criteriaBasicSalary.value = formatNumberToCurrency(0);
                         criteriaAllowance.value = formatNumberToCurrency(0);
@@ -2482,6 +2584,7 @@
                         criteriaMealAllowance.value = formatNumberToCurrency(0);
                         criteriaTransportAllowance.value = formatNumberToCurrency(0);
                         criteriaCommunicationAllowance.value = formatNumberToCurrency(0);
+                        criteriaLeaveDays.value = 0;
                         
                         appState.currentCriteriaId = null;
                     }
@@ -2499,7 +2602,12 @@
                 return;
             }
             
-            const employee = appState.employees.find(emp => emp.id === employeeId);
+            const employeesArray = Object.keys(appState.employees || {}).map(key => ({
+                id: key,
+                ...appState.employees[key]
+            })).filter(emp => emp.active !== false);
+            
+            const employee = employeesArray.find(emp => emp.id === employeeId);
             if (!employee) return;
             
             const criteriaData = {
@@ -2512,11 +2620,12 @@
                 mealAllowance: parseCurrencyToNumber(criteriaMealAllowance.value) || 0,
                 transportAllowance: parseCurrencyToNumber(criteriaTransportAllowance.value) || 0,
                 communicationAllowance: parseCurrencyToNumber(criteriaCommunicationAllowance.value) || 0,
+                leaveDays: parseInt(criteriaLeaveDays.value) || 0,
                 updatedAt: new Date().toISOString()
             };
             
             if (appState.currentCriteriaId) {
-                db.collection('salary_criteria').doc(appState.currentCriteriaId).update(criteriaData)
+                database.ref('salary_criteria/' + appState.currentCriteriaId).update(criteriaData)
                     .then(() => {
                         alert('Đã cập nhật tiêu chí lương thành công!');
                         loadSalaryCriteria();
@@ -2529,7 +2638,7 @@
                 criteriaData.createdAt = new Date().toISOString();
                 const criteriaId = 'criteria_' + Date.now();
                 
-                db.collection('salary_criteria').doc(criteriaId).set(criteriaData)
+                database.ref('salary_criteria/' + criteriaId).set(criteriaData)
                     .then(() => {
                         alert('Đã lưu tiêu chí lương thành công!');
                         appState.currentCriteriaId = criteriaId;
@@ -2543,7 +2652,7 @@
         }
         
         function openEditCriteriaModal(criteriaId) {
-            const criterion = appState.salaryCriteria.find(c => c.id === criteriaId);
+            const criterion = appState.salaryCriteria[criteriaId];
             if (!criterion) return;
             
             appState.currentCriteriaId = criteriaId;
@@ -2556,6 +2665,7 @@
             editCriteriaMealAllowance.value = formatNumberToCurrency(criterion.mealAllowance || 0);
             editCriteriaTransportAllowance.value = formatNumberToCurrency(criterion.transportAllowance || 0);
             editCriteriaCommunicationAllowance.value = formatNumberToCurrency(criterion.communicationAllowance || 0);
+            editCriteriaLeaveDays.value = criterion.leaveDays || 0;
             
             editCriteriaModal.style.display = 'flex';
         }
@@ -2576,10 +2686,11 @@
                 mealAllowance: parseCurrencyToNumber(editCriteriaMealAllowance.value) || 0,
                 transportAllowance: parseCurrencyToNumber(editCriteriaTransportAllowance.value) || 0,
                 communicationAllowance: parseCurrencyToNumber(editCriteriaCommunicationAllowance.value) || 0,
+                leaveDays: parseInt(editCriteriaLeaveDays.value) || 0,
                 updatedAt: new Date().toISOString()
             };
             
-            db.collection('salary_criteria').doc(appState.currentCriteriaId).update(criteriaData)
+            database.ref('salary_criteria/' + appState.currentCriteriaId).update(criteriaData)
                 .then(() => {
                     alert('Đã cập nhật tiêu chí lương thành công!');
                     closeCriteriaModal();
@@ -2592,7 +2703,7 @@
         }
         
         function deleteCriterion(criteriaId) {
-            db.collection('salary_criteria').doc(criteriaId).delete()
+            database.ref('salary_criteria/' + criteriaId).remove()
                 .then(() => {
                     alert('Đã xóa tiêu chí lương thành công!');
                     loadSalaryCriteria();
@@ -2603,6 +2714,71 @@
                 });
         }
         
+        // ============================================
+        // PASSWORD VERIFICATION FUNCTIONS
+        // ============================================
+        
+        function openPasswordModal(action, data = null) {
+            appState.pendingAction = action;
+            appState.pendingActionData = data;
+            verifyPasswordInput.value = '';
+            passwordModal.style.display = 'flex';
+        }
+        
+        function closePasswordModal() {
+            passwordModal.style.display = 'none';
+            appState.pendingAction = null;
+            appState.pendingActionData = null;
+        }
+        
+        function verifyPassword() {
+            const password = verifyPasswordInput.value;
+            
+            if (password === APP_PASSWORD) {
+                closePasswordModal();
+                
+                // Execute pending action
+                if (appState.pendingAction === 'deleteCriteria') {
+                    deleteCriterion(appState.pendingActionData);
+                } else if (appState.pendingAction === 'deleteSalary') {
+                    deleteSalaryRecord(appState.pendingActionData);
+                } else if (appState.pendingAction === 'deleteEmployee') {
+                    deleteEmployee(appState.pendingActionData);
+                } else if (appState.pendingAction === 'deleteSalaryRecord') {
+                    deleteSalaryRecord(appState.pendingActionData);
+                }
+            } else {
+                alert('Mật khẩu không đúng!');
+                verifyPasswordInput.value = '';
+            }
+        }
+        
+        function requestDeleteCriteria() {
+            if (!appState.currentCriteriaId) return;
+            openPasswordModal('deleteCriteria', appState.currentCriteriaId);
+        }
+        
+        function requestDeleteCriteriaFromList(criteriaId) {
+            openPasswordModal('deleteCriteria', criteriaId);
+        }
+        
+        function requestDeleteSalary(type) {
+            if (!appState.currentSalaryData || !appState.currentSalaryData.recordId) return;
+            openPasswordModal('deleteSalary', { id: appState.currentSalaryData.recordId, type: type });
+        }
+        
+        function requestDeleteEmployee(employeeId) {
+            openPasswordModal('deleteEmployee', employeeId);
+        }
+        
+        function requestDeleteSalaryRecord(recordId) {
+            openPasswordModal('deleteSalaryRecord', { id: recordId, type: 'record' });
+        }
+        
+        // ============================================
+        // SALARY CALCULATION FUNCTIONS (GIỮ NGUYÊN)
+        // ============================================
+        
         function loadInternalData() {
             const employeeId = internalEmployee.value;
             const month = internalMonth.value;
@@ -2612,38 +2788,37 @@
                 return;
             }
             
-            const employee = appState.employees.find(emp => emp.id === employeeId);
+            const employee = appState.employees[employeeId];
             if (!employee) return;
             
-            db.collection('salary_criteria')
-                .where('employeeId', '==', employeeId)
-                .get()
-                .then(snapshot => {
-                    let criterion = null;
-                    if (!snapshot.empty) {
-                        criterion = snapshot.docs[0].data();
-                    }
-                    
-                    internalAvatar.textContent = getInitials(employee.name);
-                    internalName.textContent = employee.name;
-                    internalPosition.textContent = employee.position || 'Nhân viên';
-                    
-                    const monthFormatted = month ? 
-                        `Tháng ${new Date(month + '-01').getMonth() + 1}/${new Date(month + '-01').getFullYear()}` : 'N/A';
-                    internalMonthText.textContent = monthFormatted;
-                    
-                    internalBasicSalaryText.textContent = formatCurrency(criterion?.basicSalary || 0);
-                    internalAllowanceText.textContent = formatCurrency(criterion?.allowance || 0);
-                    
-                    internalEmployeeInfo.style.display = 'block';
-                    
-                    updateInternalWorkingDays();
-                    
-                    checkExistingSalary(employeeId, month, 'internal');
-                })
-                .catch(error => {
-                    console.error('Error loading internal data:', error);
-                });
+            // Tìm tiêu chí lương cho nhân viên này
+            let criterion = null;
+            let criteriaId = null;
+            
+            Object.keys(appState.salaryCriteria || {}).forEach(key => {
+                if (appState.salaryCriteria[key].employeeId === employeeId) {
+                    criterion = appState.salaryCriteria[key];
+                    criteriaId = key;
+                }
+            });
+            
+            internalAvatar.textContent = getInitials(employee.name);
+            internalName.textContent = employee.name;
+            internalPosition.textContent = employee.position || 'Nhân viên';
+            
+            const monthFormatted = month ? 
+                `Tháng ${new Date(month + '-01').getMonth() + 1}/${new Date(month + '-01').getFullYear()}` : 'N/A';
+            internalMonthText.textContent = monthFormatted;
+            
+            internalBasicSalaryText.textContent = formatCurrency(criterion?.basicSalary || 0);
+            internalAllowanceText.textContent = formatCurrency(criterion?.allowance || 0);
+            internalLeaveDaysText.textContent = `${criterion?.leaveDays || 0} ngày`;
+            
+            internalEmployeeInfo.style.display = 'block';
+            
+            updateInternalWorkingDays();
+            
+            checkExistingSalary(employeeId, month, 'internal');
         }
         
         function updateInternalWorkingDays() {
@@ -2679,6 +2854,30 @@
             enteredWorkDays.textContent = `${enteredDays} ngày`;
             const ratio = maxDays > 0 ? (enteredDays / maxDays * 100).toFixed(2) : 0;
             workDaysRatio.textContent = `${enteredDays}/${maxDays} (${ratio}%)`;
+            
+            // Hiển thị KPI thực nhận
+            updateKpiActualDisplay();
+        }
+        
+        function updateKpiActualDisplay() {
+            const employeeId = internalEmployee.value;
+            if (!employeeId) return;
+            
+            // Tìm tiêu chí lương
+            let criterion = null;
+            Object.keys(appState.salaryCriteria || {}).forEach(key => {
+                if (appState.salaryCriteria[key].employeeId === employeeId) {
+                    criterion = appState.salaryCriteria[key];
+                }
+            });
+            
+            if (!criterion) return;
+            
+            const kpiPercentage = parseFloat(internalKpiPercentage.value) || 0;
+            const kpiStandard = criterion.kpiStandard || 0;
+            const kpiActual = kpiStandard * (kpiPercentage / 100);
+            
+            internalKpiActualText.textContent = formatCurrency(kpiActual);
         }
         
         function calculateInternalSalary() {
@@ -2694,9 +2893,13 @@
                 return;
             }
             
-            const criterion = appState.salaryCriteria.find(c => 
-                c.employeeId === employeeId
-            );
+            // Tìm tiêu chí lương
+            let criterion = null;
+            Object.keys(appState.salaryCriteria || {}).forEach(key => {
+                if (appState.salaryCriteria[key].employeeId === employeeId) {
+                    criterion = appState.salaryCriteria[key];
+                }
+            });
             
             if (!criterion) {
                 alert('Chưa có tiêu chí lương cho nhân viên này. Vui lòng tạo tiêu chí ở Tab 2 trước.');
@@ -2710,21 +2913,48 @@
             const allowance = criterion.allowance || 0;
             const kpiStandard = criterion.kpiStandard || 0;
             const insuranceSalary = criterion.insuranceSalary || 0;
+            const leaveDays = criterion.leaveDays || 0;
             
+            // Tính KPI thực nhận theo tỷ lệ %
             const kpiActual = kpiStandard * (kpiPercentage / 100);
-            const totalBefore = basicSalary + allowance + kpiActual + kpiAdjustment;
-            const totalByDays = totalBefore * daysRatio;
             
-            const insuranceDeduction = insuranceSalary * 0.105 * daysRatio;
+            // Tính lương nghỉ phép (bảng nội bộ)
+            const leaveSalary = maxDays > 0 ? (basicSalary * leaveDays / maxDays) : 0;
             
-            const totalAfterDeductions = totalByDays - insuranceDeduction - otherDeductions;
+            // Tính theo ngày công (chi tiết như yêu cầu)
+            const basicByDays = basicSalary * daysRatio;
+            const allowanceByDays = allowance * daysRatio;
+            const kpiByDays = kpiActual * daysRatio;
             
-            internalTotalBefore.textContent = formatCurrency(totalBefore);
-            internalDaysRatio.textContent = `${workDays}/${maxDays} (${(daysRatio * 100).toFixed(2)}%)`;
-            internalByDays.textContent = formatCurrency(totalByDays);
+            // BH người lao động KHÔNG tính theo ngày công
+            const insuranceDeduction = insuranceSalary * 0.105; // KHÔNG nhân daysRatio
+            
+            // Tổng lương = Lương theo ngày công + Lương nghỉ phép - BH - Các khoản trừ
+            // KPI adjustment được cộng trực tiếp (không nhân daysRatio)
+            const totalAfterDeductions = basicByDays + allowanceByDays + kpiByDays + kpiAdjustment + leaveSalary - insuranceDeduction - otherDeductions;
+            
+            // Hiển thị chi tiết tính toán
+            internalBasicSalaryDisplay.textContent = formatCurrency(basicSalary);
+            internalBasicByDays.textContent = formatCurrency(basicByDays);
+            internalAllowanceByDays.textContent = formatCurrency(allowanceByDays);
+            internalKpiActualDisplay.textContent = formatCurrency(kpiActual);
+            internalKpiByDays.textContent = formatCurrency(kpiByDays);
+            internalKpiAdjustDisplay.textContent = formatCurrency(kpiAdjustment);
+            internalLeaveSalary.textContent = formatCurrency(leaveSalary);
             internalBhDeduction.textContent = formatCurrency(-insuranceDeduction);
             internalOtherDeduct.textContent = formatCurrency(-otherDeductions);
             internalFinalSalary.textContent = formatCurrency(totalAfterDeductions);
+            
+            // Hiển thị thông tin nghỉ phép
+            if (leaveDays > 0) {
+                leaveDaysInfo.style.display = 'block';
+                leaveDaysCount.textContent = `${leaveDays} ngày`;
+                leaveSalaryAmount.textContent = formatCurrency(leaveSalary);
+                internalLeaveDaysDisplay.textContent = `${leaveDays} ngày`;
+            } else {
+                leaveDaysInfo.style.display = 'none';
+                internalLeaveDaysDisplay.textContent = '0 ngày';
+            }
             
             appState.lastInternalSalary = totalAfterDeductions;
             
@@ -2732,6 +2962,7 @@
                 employeeId: employeeId,
                 month: month,
                 workDays: workDays,
+                leaveDays: leaveDays,
                 internal: {
                     basicSalary: basicSalary,
                     allowance: allowance,
@@ -2742,7 +2973,11 @@
                     insuranceSalary: insuranceSalary,
                     insuranceDeduction: insuranceDeduction,
                     otherDeductions: otherDeductions,
-                    totalByDays: totalByDays,
+                    leaveDays: leaveDays,
+                    leaveSalary: leaveSalary,
+                    basicByDays: basicByDays,
+                    allowanceByDays: allowanceByDays,
+                    kpiByDays: kpiByDays,
                     finalSalary: totalAfterDeductions
                 }
             };
@@ -2751,36 +2986,61 @@
         }
         
         function checkExistingSalary(employeeId, month, type) {
-            db.collection('salary_records')
-                .where('employeeId', '==', employeeId)
-                .where('month', '==', month)
-                .where('type', '==', type)
-                .get()
+            database.ref('salary_records')
+                .orderByChild('employeeId')
+                .equalTo(employeeId)
+                .once('value')
                 .then(snapshot => {
-                    if (!snapshot.empty) {
-                        const record = snapshot.docs[0].data();
-                        const recordId = snapshot.docs[0].id;
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        let foundRecord = null;
+                        let recordId = null;
                         
-                        if (type === 'internal') {
-                            internalWorkDays.value = record.workDays || 0;
-                            internalKpiPercentage.value = record.data?.kpiPercentage || 0;
-                            internalKpiAdjustment.value = formatNumberToCurrency(record.data?.kpiAdjustment || 0);
-                            internalOtherDeductions.value = formatNumberToCurrency(record.data?.otherDeductions || 0);
-                            
-                            editInternalBtn.style.display = 'inline-block';
-                            deleteInternalBtn.style.display = 'inline-block';
-                            saveInternalSalaryBtn.style.display = 'none';
-                            
-                            appState.currentSalaryData = {
-                                ...appState.currentSalaryData,
-                                recordId: recordId
-                            };
-                            
-                            calculateInternalSalary();
-                        } else if (type === 'tax') {
-                            editTaxBtn.style.display = 'inline-block';
-                            deleteTaxBtn.style.display = 'inline-block';
-                            saveTaxSalaryBtn.style.display = 'none';
+                        Object.keys(data).forEach(key => {
+                            if (data[key].month === month && data[key].type === type) {
+                                foundRecord = data[key];
+                                recordId = key;
+                            }
+                        });
+                        
+                        if (foundRecord) {
+                            if (type === 'internal') {
+                                internalWorkDays.value = foundRecord.workDays || 0;
+                                internalKpiPercentage.value = foundRecord.data?.kpiPercentage || 0;
+                                internalKpiAdjustment.value = formatNumberToCurrency(foundRecord.data?.kpiAdjustment || 0);
+                                internalOtherDeductions.value = formatNumberToCurrency(foundRecord.data?.otherDeductions || 0);
+                                
+                                editInternalBtn.style.display = 'inline-block';
+                                deleteInternalBtn.style.display = 'inline-block';
+                                saveInternalSalaryBtn.style.display = 'none';
+                                
+                                appState.currentSalaryData = {
+                                    ...appState.currentSalaryData,
+                                    recordId: recordId
+                                };
+                                
+                                calculateInternalSalary();
+                            } else if (type === 'tax') {
+                                // Load existing tax data
+                                if (foundRecord.data) {
+                                    taxKpiAdjustPercentage.value = foundRecord.data.kpiAdjustPercentage || 0;
+                                    handleKpiAdjustment();
+                                }
+                                
+                                editTaxBtn.style.display = 'inline-block';
+                                deleteTaxBtn.style.display = 'inline-block';
+                                saveTaxSalaryBtn.style.display = 'none';
+                            }
+                        } else {
+                            if (type === 'internal') {
+                                editInternalBtn.style.display = 'none';
+                                deleteInternalBtn.style.display = 'none';
+                                saveInternalSalaryBtn.style.display = 'inline-block';
+                            } else if (type === 'tax') {
+                                editTaxBtn.style.display = 'none';
+                                deleteTaxBtn.style.display = 'none';
+                                saveTaxSalaryBtn.style.display = 'inline-block';
+                            }
                         }
                     } else {
                         if (type === 'internal') {
@@ -2805,7 +3065,7 @@
                 return;
             }
             
-            const employee = appState.employees.find(emp => emp.id === appState.currentSalaryData.employeeId);
+            const employee = appState.employees[appState.currentSalaryData.employeeId];
             if (!employee) return;
             
             const salaryRecord = {
@@ -2813,6 +3073,7 @@
                 employeeName: employee.name,
                 month: appState.currentSalaryData.month,
                 workDays: appState.currentSalaryData.workDays,
+                leaveDays: appState.currentSalaryData.leaveDays || 0,
                 type: 'internal',
                 data: appState.currentSalaryData.internal,
                 totalSalary: appState.currentSalaryData.internal.finalSalary,
@@ -2822,7 +3083,7 @@
             
             const recordId = 'salary_' + Date.now();
             
-            db.collection('salary_records').doc(recordId).set(salaryRecord)
+            database.ref('salary_records/' + recordId).set(salaryRecord)
                 .then(() => {
                     alert('Đã lưu lương nội bộ thành công!');
                     editInternalBtn.style.display = 'inline-block';
@@ -2837,7 +3098,48 @@
                 });
         }
         
-        // TỰ ĐỘNG TÍNH LƯƠNG HỢP ĐỒNG TỪ TAB 3
+        // ============================================
+        // TAX SALARY FUNCTIONS (GIỮ NGUYÊN)
+        // ============================================
+        
+        function autoSyncFromTab3() {
+            if (appState.currentSalaryData && appState.currentSalaryData.internal) {
+                autoSyncIndicator.style.display = 'flex';
+                
+                appState.autoSyncData = {
+                    employeeId: appState.currentSalaryData.employeeId,
+                    month: appState.currentSalaryData.month,
+                    workDays: appState.currentSalaryData.workDays,
+                    internalSalary: appState.currentSalaryData.internal.finalSalary,
+                    internalData: appState.currentSalaryData.internal
+                };
+                
+                const employee = appState.employees[appState.currentSalaryData.employeeId];
+                if (employee) {
+                    autoSyncEmployee.textContent = employee.name;
+                }
+                
+                const monthFormatted = appState.currentSalaryData.month ? 
+                    `Tháng ${new Date(appState.currentSalaryData.month + '-01').getMonth() + 1}/${new Date(appState.currentSalaryData.month + '-01').getFullYear()}` : 'N/A';
+                autoSyncMonth.textContent = monthFormatted;
+                autoSyncWorkDays.textContent = `${appState.currentSalaryData.workDays} ngày`;
+                autoSyncInternalSalary.textContent = formatCurrency(appState.currentSalaryData.internal.finalSalary);
+                
+                smartComparisonSection.style.display = 'block';
+                autoCalculateNotice.style.display = 'flex';
+                
+                setTimeout(() => {
+                    autoCalculateTaxSalary();
+                    autoSyncIndicator.style.display = 'none';
+                }, 1000);
+            } else {
+                smartComparisonSection.style.display = 'none';
+                autoSyncIndicator.style.display = 'none';
+                autoCalculateNotice.style.display = 'none';
+                taxAdjustmentSection.style.display = 'none';
+            }
+        }
+        
         function autoCalculateTaxSalary() {
             if (!appState.autoSyncData || !appState.autoSyncData.internalSalary) {
                 console.log('Không có dữ liệu từ Tab 3 để tính toán tự động');
@@ -2854,9 +3156,13 @@
                 return;
             }
             
-            const criterion = appState.salaryCriteria.find(c => 
-                c.employeeId === employeeId
-            );
+            // Tìm tiêu chí lương
+            let criterion = null;
+            Object.keys(appState.salaryCriteria || {}).forEach(key => {
+                if (appState.salaryCriteria[key].employeeId === employeeId) {
+                    criterion = appState.salaryCriteria[key];
+                }
+            });
             
             if (!criterion) {
                 console.log('Không tìm thấy tiêu chí lương cho nhân viên này');
@@ -2882,24 +3188,33 @@
             const transportAllowance = criterion.transportAllowance || 0;
             const communicationAllowance = criterion.communicationAllowance || 0;
             const kpiStandard = criterion.kpiStandard || 0;
+            const leaveDays = criterion.leaveDays || 0;
             
-            const actualInsurance = insuranceSalary * daysRatio;
+            // Tính lương nghỉ phép (bảng BH)
+            const leaveSalary = maxWorkingDays > 0 ? (insuranceSalary * leaveDays / maxWorkingDays) : 0;
+            
+            const insuranceByDays = insuranceSalary * daysRatio;
             const totalMeal = mealAllowance * workDays;
             const totalTransport = transportAllowance * daysRatio;
             const totalCommunication = communicationAllowance * daysRatio;
             
-            const insuranceDeduction = insuranceSalary * 0.105 * daysRatio;
+            // BH người lao động KHÔNG tính theo ngày công
+            const insuranceDeduction = insuranceSalary * 0.105; // KHÔNG nhân daysRatio
             
-            const requiredKpi = internalSalary - actualInsurance - totalMeal - totalTransport - totalCommunication + insuranceDeduction;
+            // Tính KPI cần thiết để đạt tổng lương bằng bảng nội bộ
+            const requiredKpi = internalSalary - insuranceByDays - leaveSalary - totalMeal - totalTransport - totalCommunication + insuranceDeduction;
             
             const requiredPercentage = kpiStandard > 0 ? (requiredKpi / kpiStandard) * 100 : 0;
             
             const safePercentage = Math.max(0, Math.min(200, requiredPercentage));
             const safeKpi = kpiStandard * (safePercentage / 100);
             
-            const totalSalary = actualInsurance + totalMeal + totalTransport + totalCommunication + safeKpi - insuranceDeduction;
+            const totalSalary = insuranceByDays + leaveSalary + totalMeal + totalTransport + totalCommunication + safeKpi - insuranceDeduction;
             
-            taxInsuranceSalary.textContent = formatCurrency(actualInsurance);
+            // Hiển thị thông tin
+            taxInsuranceSalary.textContent = formatCurrency(insuranceSalary);
+            taxInsuranceByDays.textContent = formatCurrency(insuranceByDays);
+            taxLeaveSalary.textContent = formatCurrency(leaveSalary);
             taxMealAllowance.textContent = formatCurrency(totalMeal);
             taxTransportAllowance.textContent = formatCurrency(totalTransport);
             taxCommunicationAllowance.textContent = formatCurrency(totalCommunication);
@@ -2909,13 +3224,30 @@
             taxOtherDeduct.textContent = formatCurrency(0);
             taxFinalSalary.textContent = formatCurrency(totalSalary);
             
+            // Hiển thị phần điều chỉnh KPI
+            taxAdjustmentSection.style.display = 'block';
+            taxKpiStandard.value = formatNumberToCurrency(kpiStandard);
+            taxKpiAfterAdjust.value = formatNumberToCurrency(safeKpi);
+            taxKpiAdjustPercentage.value = 0;
+            
+            // Hiển thị thông tin nghỉ phép
+            if (leaveDays > 0) {
+                taxLeaveDaysInfo.style.display = 'block';
+                taxLeaveDaysCount.textContent = `${leaveDays} ngày`;
+                taxLeaveSalaryAmount.textContent = formatCurrency(leaveSalary);
+            } else {
+                taxLeaveDaysInfo.style.display = 'none';
+            }
+            
             appState.currentSalaryData = {
                 ...appState.currentSalaryData,
                 employeeId: employeeId,
                 month: month,
                 workDays: workDays,
+                leaveDays: leaveDays,
                 tax: {
                     insuranceSalary: insuranceSalary,
+                    insuranceByDays: insuranceByDays,
                     insuranceDeduction: insuranceDeduction,
                     mealAllowance: mealAllowance,
                     totalMeal: totalMeal,
@@ -2923,8 +3255,11 @@
                     totalTransport: totalTransport,
                     communicationAllowance: communicationAllowance,
                     totalCommunication: totalCommunication,
+                    leaveDays: leaveDays,
+                    leaveSalary: leaveSalary,
                     kpiActual: safeKpi,
                     kpiAdjustment: 0,
+                    kpiAdjustPercentage: 0,
                     otherDeductions: 0,
                     kpiPercentage: safePercentage,
                     finalSalary: totalSalary
@@ -2934,13 +3269,47 @@
             checkExistingSalary(employeeId, month, 'tax');
         }
         
+        function handleKpiAdjustment() {
+            if (!appState.currentSalaryData || !appState.currentSalaryData.tax) {
+                return;
+            }
+            
+            const adjustPercentage = parseFloat(taxKpiAdjustPercentage.value) || 0;
+            const kpiStandard = parseCurrencyToNumber(taxKpiStandard.value) || 0;
+            
+            // Tính KPI sau điều chỉnh
+            const adjustedKpi = kpiStandard * (1 + adjustPercentage / 100);
+            
+            // Cập nhật hiển thị
+            taxKpiAfterAdjust.value = formatNumberToCurrency(adjustedKpi);
+            taxKpiActual.textContent = formatCurrency(adjustedKpi);
+            
+            // Tính lại tổng lương
+            const insuranceByDays = parseCurrencyToNumber(taxInsuranceByDays.textContent) || 0;
+            const leaveSalary = parseCurrencyToNumber(taxLeaveSalary.textContent) || 0;
+            const totalMeal = parseCurrencyToNumber(taxMealAllowance.textContent) || 0;
+            const totalTransport = parseCurrencyToNumber(taxTransportAllowance.textContent) || 0;
+            const totalCommunication = parseCurrencyToNumber(taxCommunicationAllowance.textContent) || 0;
+            const insuranceDeduction = parseCurrencyToNumber(taxBhDeduction.textContent.replace('-', '')) || 0;
+            
+            const newTotalSalary = insuranceByDays + leaveSalary + totalMeal + totalTransport + totalCommunication + adjustedKpi - insuranceDeduction;
+            taxFinalSalary.textContent = formatCurrency(newTotalSalary);
+            
+            // Cập nhật state
+            if (appState.currentSalaryData && appState.currentSalaryData.tax) {
+                appState.currentSalaryData.tax.kpiActual = adjustedKpi;
+                appState.currentSalaryData.tax.kpiAdjustPercentage = adjustPercentage;
+                appState.currentSalaryData.tax.finalSalary = newTotalSalary;
+            }
+        }
+        
         function saveTaxSalary() {
             if (!appState.currentSalaryData || !appState.currentSalaryData.tax) {
                 alert('Vui lòng tính toán lương trước khi lưu!');
                 return;
             }
             
-            const employee = appState.employees.find(emp => emp.id === appState.currentSalaryData.employeeId);
+            const employee = appState.employees[appState.currentSalaryData.employeeId];
             if (!employee) return;
             
             const salaryRecord = {
@@ -2948,6 +3317,7 @@
                 employeeName: employee.name,
                 month: appState.currentSalaryData.month,
                 workDays: appState.currentSalaryData.workDays,
+                leaveDays: appState.currentSalaryData.leaveDays || 0,
                 type: 'tax',
                 data: appState.currentSalaryData.tax,
                 totalSalary: appState.currentSalaryData.tax.finalSalary,
@@ -2957,7 +3327,7 @@
             
             const recordId = 'salary_' + Date.now();
             
-            db.collection('salary_records').doc(recordId).set(salaryRecord)
+            database.ref('salary_records/' + recordId).set(salaryRecord)
                 .then(() => {
                     alert('Đã lưu lương hợp đồng thành công!');
                     editTaxBtn.style.display = 'inline-block';
@@ -2972,34 +3342,41 @@
                 });
         }
         
+        // ============================================
+        // SALARY RECORDS FUNCTIONS
+        // ============================================
+        
         function loadSalaryRecords() {
             salaryLoading.style.display = 'block';
             salaryRecordsTable.style.display = 'none';
             
-            let query = db.collection('salary_records').orderBy('createdAt', 'desc');
-            
-            const filterMonthValue = filterMonth.value;
-            const filterEmployeeValue = filterEmployee.value;
-            
-            if (filterMonthValue) {
-                query = query.where('month', '==', filterMonthValue);
-            }
-            
-            if (filterEmployeeValue) {
-                query = query.where('employeeId', '==', filterEmployeeValue);
-            }
-            
-            query.get()
+            database.ref('salary_records').once('value')
                 .then(snapshot => {
-                    const records = [];
-                    snapshot.forEach(doc => {
-                        records.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
+                    const recordsData = snapshot.val();
+                    appState.salaryRecords = recordsData || {};
                     
-                    renderSalaryRecords(records);
+                    // Chuyển đổi sang array và lọc
+                    let recordsArray = Object.keys(appState.salaryRecords || {}).map(key => ({
+                        id: key,
+                        ...appState.salaryRecords[key]
+                    }));
+                    
+                    // Áp dụng bộ lọc
+                    const filterMonthValue = filterMonth.value;
+                    const filterEmployeeValue = filterEmployee.value;
+                    
+                    if (filterMonthValue) {
+                        recordsArray = recordsArray.filter(record => record.month === filterMonthValue);
+                    }
+                    
+                    if (filterEmployeeValue) {
+                        recordsArray = recordsArray.filter(record => record.employeeId === filterEmployeeValue);
+                    }
+                    
+                    // Sắp xếp theo ngày tạo mới nhất
+                    recordsArray.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    
+                    renderSalaryRecords(recordsArray);
                     salaryLoading.style.display = 'none';
                     salaryRecordsTable.style.display = 'table';
                 })
@@ -3009,13 +3386,13 @@
                 });
         }
         
-        function renderSalaryRecords(records = appState.salaryRecords) {
+        function renderSalaryRecords(recordsArray) {
             salaryRecordsBody.innerHTML = '';
             
-            if (records.length === 0) {
+            if (recordsArray.length === 0) {
                 salaryRecordsBody.innerHTML = `
                     <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px;">
+                        <td colspan="10" style="text-align: center; padding: 40px;">
                             <i class="fas fa-file-invoice-dollar" style="font-size: 48px; color: #ddd;"></i>
                             <p>Không có bảng lương nào</p>
                         </td>
@@ -3024,7 +3401,7 @@
                 return;
             }
             
-            records.forEach((record, index) => {
+            recordsArray.forEach((record, index) => {
                 const row = document.createElement('tr');
                 
                 const createdDate = record.createdAt ? 
@@ -3042,6 +3419,7 @@
                     <td>${record.employeeName || 'N/A'}</td>
                     <td>${monthFormatted}</td>
                     <td>${record.workDays || 0} ngày</td>
+                    <td>${record.leaveDays || 0} ngày</td>
                     <td>${record.type === 'internal' ? formatCurrency(record.totalSalary || 0) : '-'}</td>
                     <td>${record.type === 'tax' ? formatCurrency(record.totalSalary || 0) : '-'}</td>
                     <td>${createdDate}</td>
@@ -3067,7 +3445,7 @@
             const recordId = data.id;
             const type = data.type;
             
-            db.collection('salary_records').doc(recordId).delete()
+            database.ref('salary_records/' + recordId).remove()
                 .then(() => {
                     alert('Đã xóa bảng lương thành công!');
                     
@@ -3087,30 +3465,39 @@
         }
         
         function viewSalaryDetail(recordId) {
-            const record = appState.salaryRecords.find(r => r.id === recordId);
+            const record = appState.salaryRecords[recordId];
             if (!record) return;
             
             let detail = `Chi tiết bảng lương:\n\n` +
                   `Nhân viên: ${record.employeeName}\n` +
                   `Tháng: ${record.month}\n` +
                   `Ngày công: ${record.workDays} ngày\n` +
+                  `Ngày phép: ${record.leaveDays || 0} ngày\n` +
                   `Loại: ${record.type === 'internal' ? 'Nội bộ' : 'Hợp đồng'}\n` +
                   `Tổng lương: ${formatCurrency(record.totalSalary || 0)}\n\n`;
             
             if (record.type === 'internal') {
                 detail += `Chi tiết:\n` +
                          `- Lương cơ bản: ${formatCurrency(record.data?.basicSalary || 0)}\n` +
+                         `- Lương theo ngày công: ${formatCurrency(record.data?.basicByDays || 0)}\n` +
                          `- Phụ cấp: ${formatCurrency(record.data?.allowance || 0)}\n` +
-                         `- KPI: ${formatCurrency(record.data?.kpiActual || 0)}\n` +
+                         `- Phụ cấp theo ngày công: ${formatCurrency(record.data?.allowanceByDays || 0)}\n` +
+                         `- KPI thực nhận: ${formatCurrency(record.data?.kpiActual || 0)}\n` +
+                         `- KPI theo ngày công: ${formatCurrency(record.data?.kpiByDays || 0)}\n` +
+                         `- Điều chỉnh KPI: ${formatCurrency(record.data?.kpiAdjustment || 0)}\n` +
+                         `- Lương nghỉ phép: ${formatCurrency(record.data?.leaveSalary || 0)}\n` +
                          `- Trừ BH: ${formatCurrency(record.data?.insuranceDeduction || 0)}\n` +
                          `- Trừ khác: ${formatCurrency(record.data?.otherDeductions || 0)}`;
             } else {
+                const kpiAdjustPercentage = record.data?.kpiAdjustPercentage || 0;
                 detail += `Chi tiết:\n` +
                          `- Lương BH: ${formatCurrency(record.data?.insuranceSalary || 0)}\n` +
+                         `- Lương BH theo ngày công: ${formatCurrency(record.data?.insuranceByDays || 0)}\n` +
+                         `- Lương nghỉ phép: ${formatCurrency(record.data?.leaveSalary || 0)}\n` +
                          `- Phụ cấp cơm: ${formatCurrency(record.data?.totalMeal || 0)}\n` +
                          `- Phụ cấp xăng: ${formatCurrency(record.data?.totalTransport || 0)}\n` +
                          `- Phụ cấp liên lạc: ${formatCurrency(record.data?.totalCommunication || 0)}\n` +
-                         `- KPI: ${formatCurrency(record.data?.kpiActual || 0)}\n` +
+                         `- KPI: ${formatCurrency(record.data?.kpiActual || 0)} (${kpiAdjustPercentage}%)\n` +
                          `- Trừ BH: ${formatCurrency(record.data?.insuranceDeduction || 0)}`;
             }
             
@@ -3118,7 +3505,7 @@
         }
         
         function exportSalaryExcel(recordId) {
-            const record = appState.salaryRecords.find(r => r.id === recordId);
+            const record = appState.salaryRecords[recordId];
             if (!record) return;
             
             const wb = XLSX.utils.book_new();
@@ -3132,6 +3519,7 @@
                 [`Nhân viên: ${record.employeeName || 'N/A'}`],
                 [`Tháng lương: ${monthFormatted}`],
                 [`Ngày công: ${record.workDays || 0} ngày`],
+                [`Ngày phép: ${record.leaveDays || 0} ngày`],
                 [`Loại lương: ${record.type === 'internal' ? 'Nội bộ' : 'Hợp đồng'}`],
                 [`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}`],
                 [''],
@@ -3139,23 +3527,33 @@
             ];
             
             if (record.type === 'internal') {
+                const daysRatio = record.workDays > 0 ? record.workDays / getWorkingDaysInMonth(record.month) : 0;
                 data.push(
                     ['1', 'Lương cơ bản', formatNumberToCurrency(record.data?.basicSalary || 0), ''],
-                    ['2', 'Phụ cấp chức vụ', formatNumberToCurrency(record.data?.allowance || 0), ''],
-                    ['3', 'Thu nhập KPI', formatNumberToCurrency(record.data?.kpiActual || 0), ''],
-                    ['4', 'Trừ BH người lao động', formatNumberToCurrency(-(record.data?.insuranceDeduction || 0)), '10.5%'],
-                    ['5', 'Trừ khác', formatNumberToCurrency(-(record.data?.otherDeductions || 0)), ''],
+                    ['2', `Lương theo ngày công (${(daysRatio * 100).toFixed(1)}%)`, formatNumberToCurrency(record.data?.basicByDays || 0), `Lương cơ bản × ${record.workDays}/${getWorkingDaysInMonth(record.month)}`],
+                    ['3', 'Phụ cấp chức vụ', formatNumberToCurrency(record.data?.allowance || 0), ''],
+                    ['4', 'Phụ cấp theo ngày công', formatNumberToCurrency(record.data?.allowanceByDays || 0), `Phụ cấp × ${record.workDays}/${getWorkingDaysInMonth(record.month)}`],
+                    ['5', 'KPI thực nhận', formatNumberToCurrency(record.data?.kpiActual || 0), `${record.data?.kpiPercentage || 0}% KPI chuẩn`],
+                    ['6', 'KPI theo ngày công', formatNumberToCurrency(record.data?.kpiByDays || 0), `KPI thực nhận × ${record.workDays}/${getWorkingDaysInMonth(record.month)}`],
+                    ['7', 'Điều chỉnh KPI', formatNumberToCurrency(record.data?.kpiAdjustment || 0), ''],
+                    ['8', 'Lương nghỉ phép', formatNumberToCurrency(record.data?.leaveSalary || 0), ''],
+                    ['9', 'Trừ BH người lao động', formatNumberToCurrency(-(record.data?.insuranceDeduction || 0)), '10.5%'],
+                    ['10', 'Trừ khác', formatNumberToCurrency(-(record.data?.otherDeductions || 0)), ''],
                     ['', 'TỔNG LƯƠNG', formatNumberToCurrency(record.totalSalary || 0), '']
                 );
             } else {
+                const kpiAdjustPercentage = record.data?.kpiAdjustPercentage || 0;
+                const daysRatio = record.workDays > 0 ? record.workDays / getWorkingDaysInMonth(record.month) : 0;
                 data.push(
                     ['1', 'Lương tính bảo hiểm', formatNumberToCurrency(record.data?.insuranceSalary || 0), ''],
-                    ['2', 'Phụ cấp cơm trưa', formatNumberToCurrency(record.data?.totalMeal || 0), ''],
-                    ['3', 'Phụ cấp xăng xe', formatNumberToCurrency(record.data?.totalTransport || 0), ''],
-                    ['4', 'Phụ cấp liên lạc', formatNumberToCurrency(record.data?.totalCommunication || 0), ''],
-                    ['5', 'Thu nhập KPI', formatNumberToCurrency(record.data?.kpiActual || 0), ''],
-                    ['6', 'Trừ BH người lao động', formatNumberToCurrency(-(record.data?.insuranceDeduction || 0)), '10.5%'],
-                    ['7', 'Trừ khác', formatNumberToCurrency(-(record.data?.otherDeductions || 0)), ''],
+                    ['2', `Lương BH theo ngày công (${(daysRatio * 100).toFixed(1)}%)`, formatNumberToCurrency(record.data?.insuranceByDays || 0), `Lương BH × ${record.workDays}/${getWorkingDaysInMonth(record.month)}`],
+                    ['3', 'Lương nghỉ phép', formatNumberToCurrency(record.data?.leaveSalary || 0), ''],
+                    ['4', 'Phụ cấp cơm trưa', formatNumberToCurrency(record.data?.totalMeal || 0), ''],
+                    ['5', 'Phụ cấp xăng xe', formatNumberToCurrency(record.data?.totalTransport || 0), ''],
+                    ['6', 'Phụ cấp liên lạc', formatNumberToCurrency(record.data?.totalCommunication || 0), ''],
+                    ['7', 'Thu nhập KPI', formatNumberToCurrency(record.data?.kpiActual || 0), `Điều chỉnh: ${kpiAdjustPercentage}%`],
+                    ['8', 'Trừ BH người lao động', formatNumberToCurrency(-(record.data?.insuranceDeduction || 0)), '10.5%'],
+                    ['9', 'Trừ khác', formatNumberToCurrency(-(record.data?.otherDeductions || 0)), ''],
                     ['', 'TỔNG LƯƠNG', formatNumberToCurrency(record.totalSalary || 0), '']
                 );
             }
@@ -3171,9 +3569,9 @@
             
             const wscols = [
                 {wch: 5},
+                {wch: 30},
                 {wch: 25},
-                {wch: 20},
-                {wch: 15}
+                {wch: 25}
             ];
             ws['!cols'] = wscols;
             
@@ -3188,7 +3586,26 @@
             XLSX.writeFile(wb, fileName);
         }
         
-        // Insurance Statistics Functions
+        function getWorkingDaysInMonth(month) {
+            const [year, monthNum] = month.split('-');
+            const totalDays = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
+            let workingDays = 0;
+            
+            for (let day = 1; day <= totalDays; day++) {
+                const date = new Date(parseInt(year), parseInt(monthNum) - 1, day);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    workingDays++;
+                }
+            }
+            
+            return workingDays;
+        }
+        
+        // ============================================
+        // INSURANCE STATISTICS FUNCTIONS
+        // ============================================
+        
         function loadInsuranceData() {
             const today = new Date();
             const year = today.getFullYear();
@@ -3208,21 +3625,19 @@
             insuranceTable.style.display = 'none';
             insuranceSummary.style.display = 'none';
             
-            // Get all salary records for the selected month
-            db.collection('salary_records')
-                .where('month', '==', month)
-                .where('type', '==', 'tax')
-                .get()
+            // Lấy tất cả bảng lương hợp đồng cho tháng đã chọn
+            database.ref('salary_records')
+                .orderByChild('month')
+                .equalTo(month)
+                .once('value')
                 .then(snapshot => {
-                    const records = [];
-                    snapshot.forEach(doc => {
-                        records.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
+                    const recordsData = snapshot.val();
+                    const records = recordsData ? Object.values(recordsData) : [];
                     
-                    if (records.length === 0) {
+                    // Chỉ lấy bảng lương hợp đồng (type = 'tax')
+                    const taxRecords = records.filter(record => record.type === 'tax');
+                    
+                    if (taxRecords.length === 0) {
                         insuranceLoading.innerHTML = `
                             <div style="text-align: center; padding: 40px;">
                                 <i class="fas fa-shield-alt" style="font-size: 48px; color: #ddd;"></i>
@@ -3232,7 +3647,7 @@
                         return;
                     }
                     
-                    renderInsuranceDetails(records);
+                    renderInsuranceDetails(taxRecords);
                     insuranceLoading.style.display = 'none';
                     insuranceDetails.style.display = 'block';
                     insuranceTable.style.display = 'table';
@@ -3258,16 +3673,18 @@
             records.forEach((record, index) => {
                 const row = document.createElement('tr');
                 
-                // Calculate insurance amounts
+                // Lấy lương tính bảo hiểm từ dữ liệu
                 const insuranceSalary = record.data?.insuranceSalary || 0;
-                const daysRatio = record.workDays > 0 ? record.workDays / getWorkingDaysInMonth(insuranceMonth.value) : 0;
-                const actualInsurance = insuranceSalary * daysRatio;
                 
-                const employeeInsurance = actualInsurance * 0.105; // 10.5% người lao động
-                const companyInsurance = actualInsurance * 0.215; // 21.5% công ty
+                // BH người lao động: 10.5% KHÔNG tính theo ngày công
+                const employeeInsurance = insuranceSalary * 0.105;
+                
+                // BH công ty: 21.5% KHÔNG tính theo ngày công
+                const companyInsurance = insuranceSalary * 0.215;
+                
                 const totalInsurance = employeeInsurance + companyInsurance;
                 
-                totalInsuranceSalary += actualInsurance;
+                totalInsuranceSalary += insuranceSalary;
                 totalEmployeeInsurance += employeeInsurance;
                 totalCompanyInsurance += companyInsurance;
                 totalInsuranceToPay += totalInsurance;
@@ -3275,11 +3692,11 @@
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${record.employeeName || 'N/A'}</td>
-                    <td>${formatCurrency(actualInsurance)}</td>
+                    <td>${formatCurrency(insuranceSalary)}</td>
+                    <td>${record.workDays || 0} ngày</td>
                     <td>${formatCurrency(employeeInsurance)}</td>
                     <td>${formatCurrency(companyInsurance)}</td>
                     <td>${formatCurrency(totalInsurance)}</td>
-                    <td>${record.workDays || 0} ngày</td>
                 `;
                 
                 insuranceBody.appendChild(row);
@@ -3287,23 +3704,9 @@
             
             // Update summary
             totalInsuranceSalary.textContent = formatCurrency(totalInsuranceSalary);
+            totalEmployeeInsurance.textContent = formatCurrency(totalEmployeeInsurance);
             totalCompanyInsurance.textContent = formatCurrency(totalCompanyInsurance);
-        }
-        
-        function getWorkingDaysInMonth(month) {
-            const [year, monthNum] = month.split('-');
-            const totalDays = new Date(parseInt(year), parseInt(monthNum), 0).getDate();
-            let workingDays = 0;
-            
-            for (let day = 1; day <= totalDays; day++) {
-                const date = new Date(parseInt(year), parseInt(monthNum) - 1, day);
-                const dayOfWeek = date.getDay();
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                    workingDays++;
-                }
-            }
-            
-            return workingDays;
+            totalInsuranceToPay.textContent = formatCurrency(totalInsuranceToPay);
         }
         
         function exportInsuranceExcel() {
@@ -3325,7 +3728,7 @@
                 [`Tháng: ${monthFormatted}`],
                 [`Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}`],
                 [''],
-                ['STT', 'Nhân viên', 'Lương khai BH', 'BH người lao động (10.5%)', 'BH công ty (21.5%)', 'Tổng BH phải nộp', 'Ngày công']
+                ['STT', 'Nhân viên', 'Lương khai BH', 'Ngày công', 'BH người lao động (10.5%)', 'BH công ty (21.5%)', 'Tổng BH phải nộp']
             ];
             
             // Add employee rows
@@ -3348,17 +3751,17 @@
                 '',
                 'TỔNG CỘNG',
                 totalInsuranceSalary.textContent,
-                '', // Employee insurance total not calculated separately
+                '',
+                totalEmployeeInsurance.textContent,
                 totalCompanyInsurance.textContent,
-                '', // Total insurance to pay
-                ''
+                totalInsuranceToPay.textContent
             ]);
             
             // Add approval section
             data.push(
                 [''],
-                ['', '', '', 'Người lập', 'Kế toán trưởng', 'Giám đốc'],
-                ['', '', '', '(Ký, ghi rõ họ tên)', '(Ký, ghi rõ họ tên)', '(Ký, ghi rõ họ tên)']
+                ['', '', '', '', 'Người lập', 'Kế toán trưởng', 'Giám đốc'],
+                ['', '', '', '', '(Ký, ghi rõ họ tên)', '(Ký, ghi rõ họ tên)', '(Ký, ghi rõ họ tên)']
             );
             
             // Create worksheet
@@ -3369,10 +3772,10 @@
                 {wch: 5},
                 {wch: 25},
                 {wch: 20},
+                {wch: 10},
                 {wch: 20},
                 {wch: 20},
-                {wch: 20},
-                {wch: 10}
+                {wch: 20}
             ];
             ws['!cols'] = wscols;
             
@@ -3387,6 +3790,94 @@
             // Export file
             const fileName = `Bang_bao_hiem_${month}.xlsx`;
             XLSX.writeFile(wb, fileName);
+        }
+        
+        // ============================================
+        // OTHER FUNCTIONS (GIỮ NGUYÊN)
+        // ============================================
+        
+        function handleLogin() {
+            const password = passwordInput.value;
+            
+            if (password === APP_PASSWORD) {
+                // Set login flag
+                localStorage.setItem('hr_salary_pro_logged_in', 'true');
+                
+                // Clear password field
+                passwordInput.value = '';
+                
+                // Show main app
+                showMainApp();
+                
+                // Initialize Firebase
+                initFirebase();
+                
+                // Hide error
+                loginError.style.display = 'none';
+            } else {
+                // Show error
+                loginError.style.display = 'block';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+        
+        function handleLogout() {
+            // Clear login flag
+            localStorage.removeItem('hr_salary_pro_logged_in');
+            
+            // Show login screen
+            showLoginScreen();
+        }
+        
+        function resetSalaryFields() {
+            // Reset Tab 3 fields
+            internalWorkDays.value = 0;
+            internalKpiPercentage.value = 0;
+            internalKpiAdjustment.value = formatNumberToCurrency(0);
+            internalOtherDeductions.value = formatNumberToCurrency(0);
+            
+            // Reset Tab 3 results
+            internalBasicSalaryDisplay.textContent = formatCurrency(0);
+            internalBasicByDays.textContent = formatCurrency(0);
+            internalAllowanceByDays.textContent = formatCurrency(0);
+            internalKpiActualDisplay.textContent = formatCurrency(0);
+            internalKpiByDays.textContent = formatCurrency(0);
+            internalKpiAdjustDisplay.textContent = formatCurrency(0);
+            internalLeaveSalary.textContent = formatCurrency(0);
+            internalBhDeduction.textContent = formatCurrency(0);
+            internalOtherDeduct.textContent = formatCurrency(0);
+            internalFinalSalary.textContent = formatCurrency(0);
+            
+            // Reset Tab 4 results
+            taxInsuranceSalary.textContent = formatCurrency(0);
+            taxInsuranceByDays.textContent = formatCurrency(0);
+            taxLeaveSalary.textContent = formatCurrency(0);
+            taxMealAllowance.textContent = formatCurrency(0);
+            taxTransportAllowance.textContent = formatCurrency(0);
+            taxCommunicationAllowance.textContent = formatCurrency(0);
+            taxKpiActual.textContent = formatCurrency(0);
+            taxBhDeduction.textContent = formatCurrency(0);
+            taxKpiAdjust.textContent = formatCurrency(0);
+            taxOtherDeduct.textContent = formatCurrency(0);
+            taxFinalSalary.textContent = formatCurrency(0);
+            
+            // Hide edit/delete buttons
+            editInternalBtn.style.display = 'none';
+            deleteInternalBtn.style.display = 'none';
+            saveInternalSalaryBtn.style.display = 'inline-block';
+            
+            editTaxBtn.style.display = 'none';
+            deleteTaxBtn.style.display = 'none';
+            saveTaxSalaryBtn.style.display = 'inline-block';
+            
+            // Hide leave days info
+            leaveDaysInfo.style.display = 'none';
+            taxLeaveDaysInfo.style.display = 'none';
+            
+            // Clear current salary data
+            appState.currentSalaryData = null;
+            appState.autoSyncData = null;
         }
         
         // Initialize app
