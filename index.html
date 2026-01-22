@@ -840,7 +840,7 @@
                 padding: 15px;
             }
         }
-		/* Thêm vào phần CSS */
+        /* Thêm vào phần CSS */
 .tax-adjustment-info {
     background: #e8f4fc;
     border-left: 4px solid #3498db;
@@ -2762,8 +2762,6 @@
                     deleteCriterion(appState.pendingActionData);
                 } else if (appState.pendingAction === 'deleteSalary') {
                     deleteSalaryRecord(appState.pendingActionData);
-                } else if (appState.pendingAction === 'deleteSalaryRecord') {
-                    deleteSalaryRecord(appState.pendingActionData);
                 }
             } else {
                 alert('Mật khẩu không đúng!');
@@ -2959,7 +2957,7 @@
             if (leaveDays > 0) {
                 leaveDaysInfo.style.display = 'block';
                 leaveDaysCount.textContent = `${leaveDays} ngày`;
-				                leaveSalaryAmount.textContent = formatCurrency(leaveSalary);
+                leaveSalaryAmount.textContent = formatCurrency(leaveSalary);
                 internalLeaveDaysDisplay.textContent = `${leaveDays} ngày`;
             } else {
                 leaveDaysInfo.style.display = 'none';
@@ -3528,7 +3526,7 @@
                         <button class="btn btn-success btn-sm" onclick="exportSalaryExcel('${record.id}')">
                             <i class="fas fa-file-excel"></i>
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="requestDeleteSalaryRecord('${record.id}')">
+                        <button class="btn btn-danger btn-sm" onclick="deleteSalaryRecordDirectly('${record.id}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -3560,6 +3558,36 @@
                     alert('Có lỗi xảy ra khi xóa bảng lương');
                 });
         }
+        
+        // ============================================
+        // CHỈNH SỬA: HÀM XÓA TRỰC TIẾP KHÔNG CẦN PASSWORD
+        // ============================================
+        
+        function deleteSalaryRecordDirectly(recordId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa bảng lương này?')) {
+                return;
+            }
+            
+            database.ref('salary_records/' + recordId).remove()
+                .then(() => {
+                    alert('Đã xóa bảng lương thành công!');
+                    
+                    // Reset salary fields if the deleted record is the current one
+                    if (appState.currentSalaryData && appState.currentSalaryData.recordId === recordId) {
+                        resetSalaryFields();
+                    }
+                    
+                    loadSalaryRecords();
+                })
+                .catch(error => {
+                    console.error('Error deleting salary record:', error);
+                    alert('Có lỗi xảy ra khi xóa bảng lương');
+                });
+        }
+        
+        // ============================================
+        // CÁC HÀM KHÁC GIỮ NGUYÊN
+        // ============================================
         
         function viewSalaryDetail(recordId) {
             const record = appState.salaryRecords[recordId];
@@ -3977,11 +4005,11 @@
             appState.autoSyncData = null;
         }
         
-        function requestDeleteSalaryRecord(recordId) {
-            if (confirm('Bạn có chắc chắn muốn xóa bảng lương này?')) {
-                deleteSalaryRecord({ id: recordId, type: 'record' });
-            }
-        }
+        // ============================================
+        // CHỈNH SỬA: LOẠI BỎ HÀM requestDeleteSalaryRecord
+        // ============================================
+        
+        // Hàm này đã bị loại bỏ và thay thế bằng deleteSalaryRecordDirectly
         
         // Initialize app
         document.addEventListener('DOMContentLoaded', initApp);
@@ -4001,4 +4029,3 @@
     </script>
 </body>
 </html>
-
