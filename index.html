@@ -1207,7 +1207,7 @@
                                 <label class="form-label">Điều chỉnh KPI (VNĐ)</label>
                                 <input type="text" id="internalKpiAdjustment" class="form-control currency" placeholder="0">
                                 <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                                    Dương: thưởng thêm, Âm: trừ
+                                   Phần cộng KPI thêm(+)
                                 </div>
                             </div>
                             
@@ -1722,7 +1722,7 @@
                     </div>
                     
                     <div class="d-flex justify-between mt-20">
-                        <button class="btn btn-danger" onclick="requestDeleteCriteria()">
+                        <button class="btn btn-danger" onclick="deleteCriterionDirectly(appState.currentCriteriaId)">
                             <i class="fas fa-trash"></i> Xóa
                         </button>
                         <button class="btn btn-success" onclick="updateCriteria()">
@@ -2538,7 +2538,7 @@
                             <button class="btn btn-warning btn-sm" onclick="openEditCriteriaModal('${criterion.id}')">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="requestDeleteCriteriaFromList('${criterion.id}')">
+                            <button class="btn btn-danger btn-sm" onclick="deleteCriterionDirectly('${criterion.id}')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -2735,6 +2735,26 @@
         }
         
         // ============================================
+        // CHỈNH SỬA: HÀM XÓA TRỰC TIẾP KHÔNG CẦN PASSWORD
+        // ============================================
+        
+        function deleteCriterionDirectly(criteriaId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa tiêu chí lương này?')) {
+                return;
+            }
+            
+            database.ref('salary_criteria/' + criteriaId).remove()
+                .then(() => {
+                    alert('Đã xóa tiêu chí lương thành công!');
+                    loadSalaryCriteria();
+                })
+                .catch(error => {
+                    console.error('Error deleting criteria:', error);
+                    alert('Có lỗi xảy ra khi xóa tiêu chí');
+                });
+        }
+        
+        // ============================================
         // PASSWORD VERIFICATION FUNCTIONS
         // ============================================
         
@@ -2758,24 +2778,13 @@
                 closePasswordModal();
                 
                 // Execute pending action
-                if (appState.pendingAction === 'deleteCriteria') {
-                    deleteCriterion(appState.pendingActionData);
-                } else if (appState.pendingAction === 'deleteSalary') {
+                if (appState.pendingAction === 'deleteSalary') {
                     deleteSalaryRecord(appState.pendingActionData);
                 }
             } else {
                 alert('Mật khẩu không đúng!');
                 verifyPasswordInput.value = '';
             }
-        }
-        
-        function requestDeleteCriteria() {
-            if (!appState.currentCriteriaId) return;
-            openPasswordModal('deleteCriteria', appState.currentCriteriaId);
-        }
-        
-        function requestDeleteCriteriaFromList(criteriaId) {
-            openPasswordModal('deleteCriteria', criteriaId);
         }
         
         function requestDeleteSalary(type) {
@@ -4004,12 +4013,6 @@
             appState.currentSalaryData = null;
             appState.autoSyncData = null;
         }
-        
-        // ============================================
-        // CHỈNH SỬA: LOẠI BỎ HÀM requestDeleteSalaryRecord
-        // ============================================
-        
-        // Hàm này đã bị loại bỏ và thay thế bằng deleteSalaryRecordDirectly
         
         // Initialize app
         document.addEventListener('DOMContentLoaded', initApp);
