@@ -839,28 +839,51 @@
             .smart-comparison {
                 padding: 15px;
             }
+            
+            .salary-table {
+                display: block;
+                overflow-x: auto;
+            }
         }
         /* Thêm vào phần CSS */
-.tax-adjustment-info {
-    background: #e8f4fc;
-    border-left: 4px solid #3498db;
-    padding: 15px;
-    border-radius: 6px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-
-.tax-adjustment-row {
-    display: flex;
-    justify-content: space-between;
-    margin: 5px 0;
-    font-size: 14px;
-}
-
-.tax-adjustment-row .percentage {
-    font-weight: bold;
-    color: #e74c3c;
-}
+        .tax-adjustment-info {
+            background: #e8f4fc;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .tax-adjustment-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .tax-adjustment-row .percentage {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        /* Bank account info in salary records */
+        .bank-account-info {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.4;
+        }
+        
+        .bank-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .account-number {
+            font-family: monospace;
+            color: #27ae60;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -1517,6 +1540,7 @@
                                     <th>Lương nội bộ</th>
                                     <th>Lương hợp đồng</th>
                                     <th>Ngày lập</th>
+                                    <th>Ngân hàng - Tài khoản</th>
                                     <th>Trạng thái</th>
                                     <th>Thao tác</th>
                                 </tr>
@@ -3496,7 +3520,7 @@
             if (recordsArray.length === 0) {
                 salaryRecordsBody.innerHTML = `
                     <tr>
-                        <td colspan="10" style="text-align: center; padding: 40px;">
+                        <td colspan="11" style="text-align: center; padding: 40px;">
                             <i class="fas fa-file-invoice-dollar" style="font-size: 48px; color: #ddd;"></i>
                             <p>Không có bảng lương nào</p>
                         </td>
@@ -3518,6 +3542,21 @@
                 const status = record.type === 'internal' ? 'Nội bộ' : 'Hợp đồng';
                 const statusColor = record.type === 'internal' ? 'blue' : 'green';
                 
+                // Lấy thông tin ngân hàng và tài khoản từ dữ liệu nhân viên
+                const employee = appState.employees[record.employeeId];
+                let bankAccountInfo = 'N/A';
+                
+                if (employee) {
+                    const bank = employee.bank || 'Chưa có';
+                    const account = employee.account || 'Chưa có';
+                    bankAccountInfo = `
+                        <div class="bank-account-info">
+                            <div class="bank-name">${bank}</div>
+                            <div class="account-number">${account}</div>
+                        </div>
+                    `;
+                }
+                
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td>${record.employeeName || 'N/A'}</td>
@@ -3527,6 +3566,7 @@
                     <td>${record.type === 'internal' ? formatCurrency(record.totalSalary || 0) : '-'}</td>
                     <td>${record.type === 'tax' ? formatCurrency(record.totalSalary || 0) : '-'}</td>
                     <td>${createdDate}</td>
+                    <td>${bankAccountInfo}</td>
                     <td><span style="color: ${statusColor}; font-weight: bold;">${status}</span></td>
                     <td>
                         <button class="btn btn-primary btn-sm" onclick="viewSalaryDetail('${record.id}')">
@@ -3602,8 +3642,13 @@
             const record = appState.salaryRecords[recordId];
             if (!record) return;
             
+            // Lấy thông tin ngân hàng từ dữ liệu nhân viên
+            const employee = appState.employees[record.employeeId];
+            const bankInfo = employee ? `Ngân hàng: ${employee.bank || 'N/A'}\nSố tài khoản: ${employee.account || 'N/A'}\n` : '';
+            
             let detail = `Chi tiết bảng lương:\n\n` +
                   `Nhân viên: ${record.employeeName}\n` +
+                  `${bankInfo}` +
                   `Tháng: ${record.month}\n` +
                   `Ngày công: ${record.workDays} ngày\n` +
                   `Ngày phép: ${record.leaveDays || 0} ngày\n` +
@@ -3647,11 +3692,18 @@
             const monthFormatted = record.month ? 
                 `Tháng ${new Date(record.month + '-01').getMonth() + 1}/${new Date(record.month + '-01').getFullYear()}` : 'N/A';
             
+            // Lấy thông tin ngân hàng từ dữ liệu nhân viên
+            const employee = appState.employees[record.employeeId];
+            const bankName = employee?.bank || 'N/A';
+            const accountNumber = employee?.account || 'N/A';
+            
             const data = [
                 [`BẢNG THU NHẬP THÁNG ${monthFormatted}`],
                 [''],
                 [`Nhân viên: ${record.employeeName || 'N/A'}`],
                 [`Tháng lương: ${monthFormatted}`],
+                [`Ngân hàng: ${bankName}`],
+                [`Số tài khoản: ${accountNumber}`],
                 [`Ngày công: ${record.workDays || 0} ngày`],
                 [`Ngày phép: ${record.leaveDays || 0} ngày`],
                 [`Loại lương: ${record.type === 'internal' ? 'Nội bộ' : 'Hợp đồng'}`],
